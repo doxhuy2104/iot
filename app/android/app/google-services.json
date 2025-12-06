@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "941229358425",
+    "project_id": "smart-watering-74a4f",
+    "storage_bucket": "smart-watering-74a4f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:941229358425:android:a74b9f28c44e66c676e048",
+        "android_client_info": {
+          "package_name": "com.example.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDN6gMLt97_ovM5TfO3rm7qG6onGfmineA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
