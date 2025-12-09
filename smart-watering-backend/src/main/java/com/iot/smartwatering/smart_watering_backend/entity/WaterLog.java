@@ -31,6 +31,7 @@ public class WaterLog {
     @Enumerated(EnumType.STRING)
     private WaterReason reason;
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private WaterStatus status = WaterStatus.PENDING;
     @Column(name = "created_at")
     private LocalDateTime createdAt;

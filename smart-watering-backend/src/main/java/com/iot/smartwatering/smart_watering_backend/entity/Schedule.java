@@ -7,7 +7,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.time.LocalDateTime;
-import java.util.Set;
 
 @Entity
 @Data
@@ -26,6 +25,7 @@ public class Schedule {
     private Long durationMinutes;
     @Column(name = "repeat_days")
     private String repeatDays;
+    @Builder.Default
     private Boolean active = true;
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;

@@ -23,9 +23,9 @@ public class FlowData {
     private Long pulseCount;
 
     @Column(name = "flow_rate_per_minute")
-    private Double flowRatePerMinute;
+    private Float flowRatePerMinute;
     @Column(name = "cumulative_liters")
-    private Double cumulativeLiters;
+    private Float cumulativeLiters;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
     @ManyToOne(fetch = FetchType.LAZY)
