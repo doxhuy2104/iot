@@ -1,9 +1,11 @@
 package com.iot.smartwatering.smart_watering_backend.controller;
 
 import com.iot.smartwatering.smart_watering_backend.dto.request.LoginRequest;
+import com.iot.smartwatering.smart_watering_backend.dto.request.RefreshTokenRequest;
 import com.iot.smartwatering.smart_watering_backend.dto.request.RegisterRequest;
 import com.iot.smartwatering.smart_watering_backend.dto.response.ApiResponse;
 import com.iot.smartwatering.smart_watering_backend.dto.response.LoginResponse;
+import com.iot.smartwatering.smart_watering_backend.dto.response.RefreshTokenResponse;
 import com.iot.smartwatering.smart_watering_backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -32,5 +34,12 @@ public class AuthController {
             @Valid @RequestBody LoginRequest request) {
         LoginResponse response = authService.login(request);
         return ResponseEntity.ok(ApiResponse.success(response));
+    }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse<RefreshTokenResponse>> refreshToken(
+            @Valid @RequestBody RefreshTokenRequest request) {
+        RefreshTokenResponse response = authService.refreshToken(request.getRefreshToken());
+        return ResponseEntity.ok(ApiResponse.success("Token đã được làm mới", response));
     }
 }

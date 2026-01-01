@@ -10,6 +10,7 @@ import com.iot.smartwatering.smart_watering_backend.repository.WaterLogRepositor
 import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,10 @@ public class ControlService {
     private final WaterLogRepository waterLogRepository;
     private final UserRepository userRepository;
     private final UserActionRepository userActionRepository;
+    private final WeatherService weatherService;
+
+    @Value("${weather.check.enabled:true}")
+    private Boolean weatherCheckEnabled;
 
     @Transactional
     public String controlWatering(ControlRequest request) {
@@ -35,7 +40,7 @@ public class ControlService {
         String action = request.getAction().toUpperCase();
 
         if ("ON".equals(action)) {
-            return startWatering(zone, request.getDurationMinutes());
+            return startWatering(zone, request.getDurationMinutes(), false);
         } else if ("OFF".equals(action)) {
             return stopWatering(zone);
         } else {
@@ -43,9 +48,40 @@ public class ControlService {
         }
     }
 
-    private String startWatering(Zone zone, Integer durationMinutes) {
+    /**
+     * Bật tưới với kiểm tra thời tiết (auto mode)
+     */
+    @Transactional
+    public String startWateringWithWeatherCheck(Long zoneId, Integer durationMinutes, String location) {
+        Zone zone = zoneRepository.findById(zoneId)
+                .orElseThrow(() -> new RuntimeException("Zone not found"));
+
+        return startWatering(zone, durationMinutes, true, location);
+    }
+
+    private String startWatering(Zone zone, Integer durationMinutes, boolean checkWeather) {
+        return startWatering(zone, durationMinutes, checkWeather, null);
+    }
+
+    private String startWatering(Zone zone, Integer durationMinutes, boolean checkWeather, String location) {
         if (zone.getPumpStatus()) {
             return "Bơm đang chạy";
+        }
+
+        // Kiểm tra thời tiết nếu được bật
+        if (checkWeather && weatherCheckEnabled) {
+            boolean shouldStop = weatherService.shouldStopWatering(location);
+            if (shouldStop) {
+                String message = "⚠️ Tạm dừng tưới: Có khả năng mưa cao trong vài giờ tới. " +
+                               "Hệ thống đã tự động hủy lệnh tưới để tiết kiệm nước.";
+                
+                // Log action
+                logUserAction(zone, UserAction.ActionType.SYSTEM_WATER_CANCEL, 
+                            "Hủy tưới tự động do dự báo mưa");
+                
+                log.warn("Watering cancelled for zone {} due to rain forecast", zone.getZoneId());
+                return message;
+            }
         }
 
         // Update zone status
@@ -59,15 +95,17 @@ public class ControlService {
         WaterLog waterLog = WaterLog.builder()
                 .zone(zone)
                 .startedAt(LocalDateTime.now())
-                .reason(WaterLog.WaterReason.MANUAL)
+                .reason(checkWeather ? WaterLog.WaterReason.AUTO_MOISTURE : WaterLog.WaterReason.MANUAL)
                 .status(WaterLog.WaterStatus.PENDING)
                 .build();
         waterLogRepository.save(waterLog);
 
         // Log user action
-        logUserAction(zone, UserAction.ActionType.MANUAL_WATER_ON,
-                "Bật tưới thủ công" + (durationMinutes != null ?
-                        " - Thời gian: " + durationMinutes + " phút" : ""));
+        String actionDetail = (checkWeather ? "Bật tưới tự động" : "Bật tưới thủ công") + 
+                            (durationMinutes != null ? " - Thời gian: " + durationMinutes + " phút" : "");
+        logUserAction(zone, checkWeather ? 
+                     UserAction.ActionType.AUTO_WATER_ON : UserAction.ActionType.MANUAL_WATER_ON,
+                     actionDetail);
 
         log.info("Started watering for zone: {}", zone.getZoneId());
         return "Đã bật tưới";
