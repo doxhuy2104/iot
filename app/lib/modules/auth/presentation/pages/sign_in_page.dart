@@ -36,18 +36,18 @@ class SignInPage extends StatefulWidget {
 
 class _SignInPageState extends State<SignInPage> {
   final _formKey = GlobalKey<FormState>();
-  final _emailController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _emailFocusNode = FocusNode();
+  final _usernameFocusNode = FocusNode();
   final _passwordFocusNode = FocusNode();
   final sharedPreferenceHelper = Modular.get<SharedPreferenceHelper>();
   final _authBloc = Modular.get<AuthBloc>();
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
-    _emailFocusNode.dispose();
+    _usernameFocusNode.dispose();
     _passwordFocusNode.dispose();
     super.dispose();
   }
@@ -77,16 +77,13 @@ class _SignInPageState extends State<SignInPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      context.localization.email,
-                      style: Styles.large.regular,
-                    ),
+                    Text('Tên đăng nhập', style: Styles.large.regular),
                     4.verticalSpace,
                     TextInput(
                       formKey: _formKey,
                       errorMessage: context.localization.invalidEmail,
-                      controller: _emailController,
-                      focusNode: _emailFocusNode,
+                      controller: _usernameController,
+                      focusNode: _usernameFocusNode,
                       placeholder: context.localization.enterEmail,
                       icon: SvgPicture.asset(
                         AppIcons.icEmail,
@@ -95,7 +92,9 @@ class _SignInPageState extends State<SignInPage> {
                           BlendMode.srcIn,
                         ),
                       ),
-                      validator: AppValidator.validateEmail,
+                      validator: (value) {
+                        return value.length >= 3;
+                      },
                       textInputAction: TextInputAction.next,
                       nextFocusNode: _passwordFocusNode,
                     ),
@@ -153,22 +152,21 @@ class _SignInPageState extends State<SignInPage> {
                           if (process!) {
                             try {
                               AppIndicator.show();
-                              final rt = await AuthHelper.signInWithPassword(
-                                emailAddress: _emailController.text,
-                                password: _passwordController.text,
-                              );
+                              // final rt = await AuthHelper.signInWithPassword(
+                              //   emailAddress: _emailController.text,
+                              //   password: _passwordController.text,
+                              // );
 
-                              String? token;
-                              if (rt?.user != null) {
-                                Utils.debugLog(
-                                  'Login email idToken:${token = await rt?.user?.getIdToken()}',
-                                );
-                              }
+                              // String? token;
+                              // if (rt?.user != null) {
+                              //   Utils.debugLog(
+                              //     'Login email idToken:${token = await rt?.user?.getIdToken()}',
+                              //   );
+                              // }
                               _authBloc.add(
                                 SignInRequest(
-                                  email: _emailController.text,
-                                  token: token ?? '',
-                                  type: 'email',
+                                  username: _usernameController.text,
+                                  password: _passwordController.text,
                                 ),
                               );
                             } on FirebaseAuthException catch (e) {
@@ -202,8 +200,9 @@ class _SignInPageState extends State<SignInPage> {
                               }
                             } catch (e) {
                               Utils.debugLogError(e);
-                            } finally {
                               AppIndicator.hide();
+                            } finally {
+                              // AppIndicator.hide();
                             }
                           }
                         },
@@ -244,39 +243,39 @@ class _SignInPageState extends State<SignInPage> {
                     ],
                   ),
                   12.verticalSpace,
-                  SecondaryButton(
-                    widget: Stack(
-                      children: [
-                        Positioned(
-                          left: 12,
-                          top: 0,
-                          bottom: 0,
-                          child: SvgPicture.asset(AppIcons.icGoogle),
-                        ),
-                        Center(child: Text(context.localization.googleLogin)),
-                      ],
-                    ),
-                    onPress: () async {
-                      try {
-                        AppIndicator.show();
-                        final rt = await AuthHelper.signInWithGoogle();
-                        String? token;
-                        if (rt.user != null) {
-                          Utils.debugLogSuccess(
-                            'Login google. idToken: ${token = await rt.user?.getIdToken()}',
-                          );
+                  // SecondaryButton(
+                  //   widget: Stack(
+                  //     children: [
+                  //       Positioned(
+                  //         left: 12,
+                  //         top: 0,
+                  //         bottom: 0,
+                  //         child: SvgPicture.asset(AppIcons.icGoogle),
+                  //       ),
+                  //       Center(child: Text(context.localization.googleLogin)),
+                  //     ],
+                  //   ),
+                  //   onPress: () async {
+                  //     try {
+                  //       AppIndicator.show();
+                  //       final rt = await AuthHelper.signInWithGoogle();
+                  //       String? token;
+                  //       if (rt.user != null) {
+                  //         Utils.debugLogSuccess(
+                  //           'Login google. idToken: ${token = await rt.user?.getIdToken()}',
+                  //         );
 
-                          _authBloc.add(
-                            SignInRequest(token: token!, type: 'GOOGLE'),
-                          );
-                        }
-                      } catch (e) {
-                        Utils.debugLogError(e);
-                      } finally {
-                        AppIndicator.hide();
-                      }
-                    },
-                  ),
+                  //         _authBloc.add(
+                  //           SignInRequest(token: token!, type: 'GOOGLE'),
+                  //         );
+                  //       }
+                  //     } catch (e) {
+                  //       Utils.debugLogError(e);
+                  //     } finally {
+                  //       AppIndicator.hide();
+                  //     }
+                  //   },
+                  // ),
                   24.verticalSpace,
                   RichText(
                     text: TextSpan(

@@ -86,89 +86,40 @@ class _TitledBottomNavigationBarState extends State<TitledBottomNavigationBar> {
                   : 0));
     return Container(
       height: height,
-      alignment: Alignment.bottomCenter,
       clipBehavior: Clip.none,
-      margin: EdgeInsets.only(bottom: 0, right: 0, left: 0),
-      color: Colors.white,
-      child: Stack(
-        alignment: Alignment.bottomCenter,
-        clipBehavior: Clip.none,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.2),
+            blurRadius: 6,
+            spreadRadius: 1,
+            offset: Offset(0, 0),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.only(right: 6, left: 6),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        mainAxisSize: MainAxisSize.max,
         children: [
-          RepaintBoundary(
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(0),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 8, sigmaY: 8),
-                child: Container(
-                  height: height,
-                  clipBehavior: Clip.none,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 60,
-                        spreadRadius: 60,
-                        offset: Offset(0, 0),
-                        blurStyle: BlurStyle.outer,
-                      ),
-                    ],
-                    borderRadius: BorderRadius.circular(0),
-                    border: Border(
-                      top: BorderSide(
-                        color: Colors.white.withValues(alpha: 0.1),
-                        width: 1,
-                      ),
+          for (var i = 0; i < items.length; i++)
+            if (true) ...[
+              Expanded(
+                child: InkWell(
+                  onTap: () => _select(i),
+                  child: Container(
+                    padding: EdgeInsets.only(top: 12),
+                    child: _buildItemWidget(
+                      items[i],
+                      i == widget.currentIndex,
+                      showText: true,
+                      iconSize: null,
                     ),
-                  ),
-                  padding: EdgeInsets.only(right: 6, left: 6),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    mainAxisSize: MainAxisSize.max,
-                    // fit: StackFit.expand,
-                    // alignment: Alignment.center,
-                    children: [
-                      for (var i = 0; i < items.length; i++)
-                        if (true) ...[
-                          Expanded(
-                            child: InkWell(
-                              onTap: () => _select(i),
-                              child: Container(
-                                padding: EdgeInsets.only(top: 12),
-                                child: _buildItemWidget(
-                                  items[i],
-                                  i == widget.currentIndex,
-                                  showText: true,
-                                  iconSize: null,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                    ],
                   ),
                 ),
               ),
-            ),
-          ),
-          // if (items.length % 2 == 1) ...[
-          //   Positioned(
-          //     bottom: 14,
-          //     child: InkWell(
-          //       onTap: () => _select(middleIndex),
-          //       child: Container(
-          //         color: Colors.transparent,
-          //         height: DEFAULT_CENTER_BTN_HEIGHT,
-          //         width: width / items.length,
-          //         child: _buildItemWidget(
-          //           items[middleIndex],
-          //           middleIndex == widget.currentIndex,
-          //           spacing: 0,
-          //         ),
-          //       ),
-          //     ),
-          //   ),
-          // ],
+            ],
         ],
       ),
     );
@@ -212,7 +163,6 @@ class _TitledBottomNavigationBarState extends State<TitledBottomNavigationBar> {
         height: width,
       );
     }
-    return Container();
   }
 
   Widget _buildText(TitledNavigationBarItem item, bool isSelected) {

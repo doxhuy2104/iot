@@ -1,3 +1,7 @@
+import 'dart:math';
+
+import 'package:app/core/components/app_dialog.dart';
+import 'package:app/core/components/app_indicator.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:app/core/constants/app_routes.dart';
@@ -21,33 +25,70 @@ class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
   AuthBloc({required this.repository}) : super(const AuthState.initial()) {
     on<AuthEvent>((event, emit) async {
       if (event is SignInRequest) {
-        // final rt = await repository.login(username: event.username);
-        // rt.fold(
-        //   (l) {
-        //     Utils.debugLog(l.reason);
-        //   },
-        //   (r) {
-        final user = UserModel(
-          email: event.type == 'EMAIL' ? event.email : null,
-          accessToken: event.token,
+        final rt = await repository.login(
+          username: event.username,
+          password: event.password,
         );
-        Globals.globalAccessToken = user.accessToken;
-        Globals.globalUserId = user.userId.toString();
-        sharedPreferenceHelper.set(
-          key: AppStores.kAccessToken,
-          value: user.accessToken!,
+        rt.fold(
+          (l) {
+            AppIndicator.hide();
+            Utils.debugLog(l.reason);
+          },
+          (r) {
+            // final user = UserModel(
+            //   email: event.type == 'EMAIL' ? event.email : null,
+            //   accessToken: event.token,
+            // );
+            Globals.globalAccessToken = r.token;
+            Globals.globalUserId = r.userId.toString();
+            sharedPreferenceHelper.set(
+              key: AppStores.kAccessToken,
+              value: r.token!,
+            );
+            sharedPreferenceHelper.set(
+              key: AppStores.kUserId,
+              value: r.userId.toString(),
+            );
+            sharedPreferenceHelper.set(
+              key: AppStores.kPassword,
+              value: event.password,
+            );
+            Utils.debugLog(r);
+            emit(state.setState(user: r));
+            AppIndicator.hide();
+            NavigationHelper.replace(
+              '${AppRoutes.moduleApp}${AppModuleRoutes.main}',
+            );
+          },
         );
-        sharedPreferenceHelper.set(
-          key: AppStores.kUserId,
-          value: user.userId.toString(),
+      } else if (event is SignUpRequest) {
+        final rt = await repository.register(
+          username: event.username,
+          email: event.email,
+          password: event.password,
         );
-        Utils.debugLog(user);
-        emit(state.setState(user: user));
-        NavigationHelper.replace(
-          '${AppRoutes.moduleApp}${AppModuleRoutes.main}',
+        rt.fold(
+          (l) {
+            Utils.debugLog(l.reason);
+          },
+          (r) {
+            emit(state.setState(email: event.email));
+            // NavigationHelper.replace(
+            //   '${AppRoutes.moduleApp}${AppModuleRoutes.main}',
+            // );
+            AppIndicator.hide();
+            AppDialog.show(
+              title: 'Đăng ký thành công',
+              message: 'Vui lòng đăng nhập để tiếp tục',
+              confirmText: 'Đăng nhập',
+              onConfirm: () {
+                NavigationHelper.replace(
+                  '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
+                );
+              },
+            );
+          },
         );
-        // },
-        // );
       } else if (event is SignOutRequest) {
         void forceLogout() {
           Globals.globalAccessToken = null;

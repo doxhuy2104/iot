@@ -1,7 +1,11 @@
 import 'package:app/core/components/buttons/button.dart';
 import 'package:app/core/constants/app_colors.dart';
+import 'package:app/core/constants/app_routes.dart';
+import 'package:app/core/constants/app_styles.dart';
 import 'package:app/core/extensions/localized_extension.dart';
 import 'package:app/core/extensions/widget_extension.dart';
+import 'package:app/core/helpers/navigation_helper.dart';
+import 'package:app/modules/zone/general/zone_module_routes.dart';
 import 'package:flutter/material.dart';
 
 class ZonePage extends StatefulWidget {
@@ -60,20 +64,20 @@ class _ZonePageState extends State<ZonePage> {
   int get _activeAlerts =>
       _zones.fold(0, (acc, zone) => acc + zone.pendingAlerts);
 
-  List<_ZoneDetail> get _filteredZones {
-    if (_query.isEmpty) return _zones;
-    return _zones
-        .where(
-          (zone) =>
-              zone.name.toLowerCase().contains(_query) ||
-              zone.location.toLowerCase().contains(_query),
-        )
-        .toList();
-  }
+  // List<_ZoneDetail> get _filteredZones {
+  //   if (_query.isEmpty) return _zones;
+  //   return _zones
+  //       .where(
+  //         (zone) =>
+  //             zone.name.toLowerCase().contains(_query) ||
+  //             zone.location.toLowerCase().contains(_query),
+  //       )
+  //       .toList();
+  // }
 
   @override
   Widget build(BuildContext context) {
-    final filtered = _filteredZones;
+    // final filtered = _filteredZones;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -97,72 +101,11 @@ class _ZonePageState extends State<ZonePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              TextField(
-                controller: _searchController,
-                onChanged: (value) => setState(() {
-                  _query = value.toLowerCase();
-                }),
-                decoration: InputDecoration(
-                  hintText: 'Search zones',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(vertical: 2),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Text(
-                'Overview',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              _OverviewGrid(
-                stats: [
-                  _OverviewStat(
-                    label: 'Total zones',
-                    value: _zones.length.toString(),
-                    subtitle: 'Configured',
-                    icon: Icons.layers_outlined,
-                    accent: AppColors.primary.withOpacity(0.1),
-                  ),
-                  _OverviewStat(
-                    label: 'Devices online',
-                    value: _totalDevices.toString(),
-                    subtitle: 'Across all zones',
-                    icon: Icons.sensors,
-                    accent: const Color(0xFFE1F5FE),
-                  ),
-                  _OverviewStat(
-                    label: 'Open alerts',
-                    value: _activeAlerts.toString(),
-                    subtitle: 'Require attention',
-                    icon: Icons.warning_amber_outlined,
-                    accent: const Color(0xFFFFF4E5),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Active zones',
-                style: Theme.of(
-                  context,
-                ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 12),
-              if (filtered.isEmpty)
-                _EmptyState(query: _query)
-              else
-                ...filtered
-                    .map((zone) => _ZoneCard(zone: zone))
-                    .expand((widget) => [widget, const SizedBox(height: 16)])
-                    .toList()
-                  ..removeLast(),
+              ..._zones
+                  .map((zone) => _ZoneCard(zone: zone))
+                  .expand((widget) => [widget, const SizedBox(height: 16)])
+                  .toList()
+                ..removeLast(),
             ],
           ),
         ),
@@ -261,27 +204,14 @@ class _ZoneCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _MetricTile(
-                  label: 'Moisture',
-                  value: '${(zone.soilMoisture * 100).round()}%',
-                  indicatorValue: zone.soilMoisture.clamp(0, 1),
-                  indicatorColor: AppColors.primary,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _MetricTile(
-                  label: 'Temperature',
-                  value: '${zone.temperature.toStringAsFixed(1)} °C',
-                  indicatorValue: (zone.temperature / 40).clamp(0, 1),
-                  indicatorColor: AppColors.danger,
-                ),
-              ),
-            ],
+
+          _MetricTile(
+            label: 'Moisture',
+            value: '${(zone.soilMoisture * 100).round()}%',
+            indicatorValue: zone.soilMoisture.clamp(0, 1),
+            indicatorColor: AppColors.primary,
           ),
+
           const SizedBox(height: 16),
           Row(
             children: [
@@ -302,7 +232,21 @@ class _ZoneCard extends StatelessWidget {
                     : AppColors.primary,
               ),
               const Spacer(),
-              TextButton(onPressed: () {}, child: const Text('Details')),
+              TextButton(
+                style: ButtonStyle(),
+                onPressed: () {
+                  NavigationHelper.navigate(
+                    '${AppRoutes.moduleZone}${ZoneModuleRoutes.zoneDetail}',
+                    args: {'name': zone.name},
+                  );
+                },
+                child: Text(
+                  'Details',
+                  style: Styles.medium.smb.copyWith(
+                    color: AppColors.primaryDark,
+                  ),
+                ),
+              ),
             ],
           ),
         ],
@@ -396,132 +340,6 @@ class _Chip extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: AppColors.primaryText,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _OverviewStat {
-  final String label;
-  final String value;
-  final String subtitle;
-  final IconData icon;
-  final Color accent;
-
-  const _OverviewStat({
-    required this.label,
-    required this.value,
-    required this.subtitle,
-    required this.icon,
-    required this.accent,
-  });
-}
-
-class _OverviewGrid extends StatelessWidget {
-  final List<_OverviewStat> stats;
-
-  const _OverviewGrid({required this.stats});
-
-  @override
-  Widget build(BuildContext context) {
-    return Wrap(
-      spacing: 12,
-      runSpacing: 12,
-      children: stats
-          .map(
-            (stat) => Container(
-              width: MediaQuery.of(context).size.width / 2 - 22,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(20),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.03),
-                    blurRadius: 10,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: stat.accent,
-                      borderRadius: BorderRadius.circular(14),
-                    ),
-                    child: Icon(stat.icon, color: AppColors.primary),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    stat.label,
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    stat.value,
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    stat.subtitle,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.secondaryText,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          )
-          .toList(),
-    );
-  }
-}
-
-class _EmptyState extends StatelessWidget {
-  final String query;
-
-  const _EmptyState({required this.query});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.borderColor),
-      ),
-      child: Column(
-        children: [
-          const Icon(
-            Icons.search_off,
-            size: 48,
-            color: AppColors.secondaryText,
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'No zone found',
-            style: Theme.of(
-              context,
-            ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            'We could not find "$query". Please try another keyword.',
-            textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.secondaryText),
           ),
         ],
       ),

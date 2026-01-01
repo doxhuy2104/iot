@@ -1,3 +1,4 @@
+import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
@@ -38,22 +39,27 @@ class SignUpPage extends StatefulWidget {
 }
 
 class _SignUpPageState extends State<SignUpPage> {
-  final TextEditingController _usernameController = TextEditingController();
+  final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
+
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
   final sharedPreferenceHelper = Modular.get<SharedPreferenceHelper>();
   final _emailFocusNode = FocusNode();
+  final _usernameFocusNode = FocusNode();
+
   final _passwordFocusNode = FocusNode();
   final _confirmPasswordFocusNode = FocusNode();
   final _formKey = GlobalKey<FormState>();
-
+  final _authBloc = Modular.get<AuthBloc>();
   @override
   void dispose() {
     _emailController.dispose();
+    _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     _emailFocusNode.dispose();
+    _usernameFocusNode.dispose();
     _passwordFocusNode.dispose();
     _confirmPasswordFocusNode.dispose();
     super.dispose();
@@ -64,14 +70,13 @@ class _SignUpPageState extends State<SignUpPage> {
     return AppAnnotatedRegion(
       child: Scaffold(
         resizeToAvoidBottomInset: false,
-        backgroundColor: Colors.white,
+        backgroundColor: AppColors.background,
         // appBar: AppBar(
         //   title: Text(context.localization.signIn, style: Styles.h3.smb),
         // ),
         body: Stack(
           children: [
             // Image.asset(AppImages.imgLogo),
-
             Positioned(
               top: AppDimensions.insetTop(context),
               left: 8,
@@ -127,6 +132,26 @@ class _SignUpPageState extends State<SignUpPage> {
                       validator: AppValidator.validateEmail,
                       textInputAction: TextInputAction.next,
                       focusNode: _emailFocusNode,
+                      nextFocusNode: _usernameFocusNode,
+                    ),
+                    16.verticalSpace,
+
+                    Text('Tên đăng nhập', style: Styles.large.regular),
+                    4.verticalSpace,
+                    TextInput(
+                      formKey: _formKey,
+                      errorMessage: 'Tên đăng nhập phải từ 3-50 ký tự',
+                      controller: _usernameController,
+                      placeholder: 'Nhập tên đăng nhập',
+                      icon: Icon(
+                        Icons.person_outline,
+                        color: AppColors.secondaryText,
+                      ),
+                      validator: (value) {
+                        return value.length >= 3;
+                      },
+                      textInputAction: TextInputAction.next,
+                      focusNode: _usernameFocusNode,
                       nextFocusNode: _passwordFocusNode,
                     ),
 
@@ -193,31 +218,36 @@ class _SignUpPageState extends State<SignUpPage> {
                             AppIndicator.show();
 
                             try {
-                              final rt = await AuthHelper.registerWithPassword(
-                                emailAddress: _emailController.text,
-                                password: _passwordController.text,
+                              // final rt = await AuthHelper.registerWithPassword(
+                              //   emailAddress: _emailController.text,
+                              //   password: _passwordController.text,
+                              // );
+                              // if (rt?.user != null) {
+                              //   Utils.debugLog(
+                              //     'Register success rt:${rt?.user?.email}',
+                              //   );
+                              _authBloc.add(
+                                SignUpRequest(
+                                  email: _emailController.text,
+                                  username: _usernameController.text,
+                                  password: _passwordController.text,
+                                ),
                               );
-                              if (rt?.user != null) {
-                                Utils.debugLog(
-                                  'Register success rt:${rt?.user?.email}',
-                                );
-
-                                if (mounted) {
-                                  AppDialog.show(
-                                    dismissible: false,
-                                    title:
-                                        context.localization.register_success,
-                                    // message: '',
-                                    type: AppDialogType.success,
-                                    confirmText: context.localization.signIn,
-                                    onConfirm: () {
-                                      NavigationHelper.replace(
-                                        '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
-                                      );
-                                    },
-                                  );
-                                }
-                              }
+                              // if (mounted) {
+                              //   AppDialog.show(
+                              //     dismissible: false,
+                              //     title: context.localization.register_success,
+                              //     // message: '',
+                              //     type: AppDialogType.success,
+                              //     confirmText: context.localization.signIn,
+                              //     onConfirm: () {
+                              //       NavigationHelper.replace(
+                              //         '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
+                              //       );
+                              //     },
+                              //   );
+                              // }
+                              // }
                             } on FirebaseAuthException catch (e) {
                               Utils.debugLogError(e.code);
 
@@ -253,7 +283,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                 type: AppDialogType.failed,
                               );
                             } finally {
-                              AppIndicator.hide();
+                              // AppIndicator.hide();
                             }
                           }
                         },

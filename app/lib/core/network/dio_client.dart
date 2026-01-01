@@ -1,3 +1,4 @@
+import 'package:app/core/utils/utils.dart';
 import 'package:dio/dio.dart';
 import 'package:app/core/network/dio_interceptor.dart';
 
@@ -26,6 +27,7 @@ final class DioClient {
     Map<String, dynamic>? data,
     Options? options,
     CancelToken? cancelToken,
+    
     ProgressCallback? onReceiveProgress,
   }) async {
     try {

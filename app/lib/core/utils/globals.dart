@@ -7,4 +7,5 @@ final class Globals {
   static String? globalFcmToken;
   static String? globalUserId;
   static String? globalUserUUID;
+
 }

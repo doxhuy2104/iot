@@ -56,8 +56,9 @@ class DioInterceptor extends Interceptor {
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
+    final fullUrl = response.requestOptions.uri.toString();
     Utils.debugLogSuccess(
-      '${response.requestOptions.method} ${response.requestOptions.path} body:${response.requestOptions.data} query:${response.requestOptions.queryParameters}',
+      '${response.requestOptions.method} $fullUrl (baseUrl: ${response.requestOptions.baseUrl}, path: ${response.requestOptions.path}) body:${response.requestOptions.data} query:${response.requestOptions.queryParameters}',
     );
     // emit to logs
     try {
@@ -114,7 +115,7 @@ class DioInterceptor extends Interceptor {
         // final errorStr =
         //     mapData['reason'] ??
         //     mapData['message'] ??
-            // AppKeys.navigatorKey.currentContext?.localization.unknown_error;
+        // AppKeys.navigatorKey.currentContext?.localization.unknown_error;
 
         // AppDialog.show(
         //   title:
@@ -131,8 +132,9 @@ class DioInterceptor extends Interceptor {
 
   @override
   void onError(DioException err, ErrorInterceptorHandler handler) {
+    final fullUrl = err.requestOptions.uri.toString();
     Utils.debugLogError(
-      '${err.requestOptions.method} ${err.requestOptions.path} body:${err.requestOptions.data} query:${err.requestOptions.queryParameters} status:${err.response?.statusCode?.toString()} error:${err.response?.data}',
+      '${err.requestOptions.method} $fullUrl (baseUrl: ${err.requestOptions.baseUrl}, path: ${err.requestOptions.path}) body:${err.requestOptions.data} query:${err.requestOptions.queryParameters} status:${err.response?.statusCode?.toString()} error:${err.response?.data}',
     );
 
     try {

@@ -13,8 +13,7 @@ class DioExceptions implements Exception {
     if (reason != null) {
       message = reason;
     } else {
-      // message =
-      //     AppKeys.navigatorKey.currentContext!.localization.pleaseTryAgain;
+      message = 'Please try again';
     }
   }
 

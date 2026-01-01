@@ -127,7 +127,7 @@ class _TextInputState extends State<TextInput> {
       // crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: BorderRadiusGeometry.circular(20),
+          borderRadius: BorderRadiusGeometry.circular(44),
           child: GestureDetector(
             onTap: () {
               _focus.requestFocus();
@@ -137,14 +137,14 @@ class _TextInputState extends State<TextInput> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: _errorMessage.isNotEmpty
-                      ? AppColors.fail
-                      : _isFocused
-                      ? AppColors.primary
-                      : AppColors.borderColor,
-                  width: 1,
-                ),
+                // border: Border.all(
+                //   color: _errorMessage.isNotEmpty
+                //       ? AppColors.fail
+                //       : _isFocused
+                //       ? AppColors.primary
+                //       : AppColors.borderColor,
+                //   width: 1,
+                // ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,

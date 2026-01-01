@@ -2,7 +2,6 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_modular/flutter_modular.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:app/core/constants/app_keys.dart';
 import 'package:app/core/constants/app_routes.dart';
@@ -45,18 +44,19 @@ class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
 
         if (JwtDecoder.isExpired(accessToken as String)) {
           Utils.debugLogSuccess('Access token is expired');
-          FirebaseAuth.instance.currentUser?.getIdToken().then((idToken) {
-            Utils.debugLogSuccess('Relogin $idToken');
-            _authBloc.add(
-              SignInRequest(
-                token: idToken!,
-                type: _authBloc.state.user?.loginType,
-                email:
-                    FirebaseAuth.instance.currentUser?.providerData[0].email ??
-                    '',
-              ),
-            );
-          });
+          // FirebaseAuth.instance.currentUser?.getIdToken().then((idToken) {
+          // Utils.debugLogSuccess('Relogin $idToken');
+          _authBloc.add(
+            SignInRequest(
+              username: _authBloc.state.user?.username ?? '',
+              password:
+                  sharedPreferenceHelper
+                      .get(key: AppStores.kPassword)
+                      ?.toString() ??
+                  '',
+            ),
+          );
+          // });
         } else {
           Utils.debugLogSuccess('Access token is not expired $accessToken');
           // _authBloc.add(GetDetailUserRequested());

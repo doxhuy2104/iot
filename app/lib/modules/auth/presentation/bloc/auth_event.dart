@@ -8,11 +8,22 @@ sealed class AuthEvent extends Equatable {
 }
 
 class SignInRequest extends AuthEvent {
-  final String? email;
-  final String token;
-  final String? type;
+  final String username;
+  final String password;
 
-  const SignInRequest({this.email, required this.token, this.type});
+  const SignInRequest({required this.username, required this.password});
+}
+
+class SignUpRequest extends AuthEvent {
+  final String email;
+  final String username;
+  final String password;
+
+  const SignUpRequest({
+    required this.email,
+    required this.username,
+    required this.password,
+  });
 }
 
 class SignOutRequest extends AuthEvent {

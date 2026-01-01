@@ -6,6 +6,7 @@ class AppTheme {
   static ThemeData get theme => ThemeData(
     fontFamily: 'BeVietnamPro',
     brightness: Brightness.light,
+    colorSchemeSeed: AppColors.primary,
     pageTransitionsTheme: const PageTransitionsTheme(
       builders: <TargetPlatform, PageTransitionsBuilder>{
         TargetPlatform.android: CupertinoPageTransitionsBuilder(),

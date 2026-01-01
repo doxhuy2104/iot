@@ -1,3 +1,4 @@
+import 'package:app/modules/account/account_module.dart';
 import 'package:app/modules/zone/zone_module.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -31,7 +32,13 @@ class MainModule extends Module {
   }
 
   @override
-  List<Module> get imports => [AppModule(), AuthModule(), ZoneModule()];
+  List<Module> get imports => [
+    AppModule(),
+    AuthModule(),
+    ZoneModule(),
+    HomeModule(),
+    AccountModule(),
+  ];
 
   @override
   void routes(RouteManager r) {
@@ -40,5 +47,6 @@ class MainModule extends Module {
     r.module(AppRoutes.moduleAuth, module: AuthModule());
     r.module(AppRoutes.moduleHome, module: HomeModule());
     r.module(AppRoutes.moduleZone, module: ZoneModule());
+    r.module(AppRoutes.moduleAccount, module: AccountModule());
   }
 }

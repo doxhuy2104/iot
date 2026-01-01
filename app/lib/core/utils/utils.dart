@@ -15,22 +15,44 @@ import 'dart:math' as math;
 import 'package:app/core/network/dio_client.dart';
 import 'package:app/core/utils/globals.dart';
 
-
 final class Utils {
   Utils._();
 
+  /// Lấy tên file từ stack trace
+  static String _getFileNameFromStackTrace() {
+    try {
+      final stackTrace = StackTrace.current;
+      final frames = stackTrace.toString().split('\n');
+      // Tìm frame đầu tiên không phải từ utils.dart
+      for (final frame in frames) {
+        if (frame.contains('.dart:') &&
+            !frame.contains('utils.dart') &&
+            !frame.contains('dart:developer')) {
+          // Extract file name từ frame
+          // Ví dụ: "package:learning_app/modules/home/presentation/bloc/home_bloc.dart:16"
+          // hoặc "file:///path/to/home_bloc.dart:16"
+          final match = RegExp(r'([^/\\]+\.dart)(?::\d+)?').firstMatch(frame);
+          if (match != null) {
+            return match.group(1) ?? 'LOG';
+          }
+        }
+      }
+    } catch (e) {
+      // Ignore errors
+    }
+    return 'LOG';
+  }
+
   static void debugLog(Object? object, {String? tagName}) {
     if (kDebugMode) {
-      log(
-        '${DateTime.now().toLocal().toString()}: $object',
-        name: tagName ?? 'LOG',
-      );
+      final fileName = tagName ?? _getFileNameFromStackTrace();
+      log('${DateTime.now().toLocal().toString()}: $object', name: fileName);
     }
   }
 
   static void debugLogSuccess(dynamic object, {String? tagName}) {
     final dateTime = DateTime.now();
-    final source = tagName ?? 'LOG';
+    final source = tagName ?? _getFileNameFromStackTrace();
     final message =
         '[${DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime)}] $object';
     if (kDebugMode) {
@@ -40,7 +62,7 @@ final class Utils {
 
   static void debugLogWarning(dynamic object, {String? tagName}) {
     final dateTime = DateTime.now();
-    final source = tagName ?? 'LOG';
+    final source = tagName ?? _getFileNameFromStackTrace();
     final message =
         '[${DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime)}] $object';
     if (kDebugMode) {
@@ -50,7 +72,7 @@ final class Utils {
 
   static void debugLogError(dynamic object, {String? tagName}) {
     final dateTime = DateTime.now();
-    final source = tagName ?? 'LOG';
+    final source = tagName ?? _getFileNameFromStackTrace();
     final message =
         '[${DateFormat('yyyy-MM-dd HH:mm:ss').format(dateTime)}] $object';
     if (kDebugMode) {
@@ -158,7 +180,6 @@ final class Utils {
 
     return uuid;
   }
-
 
   static String getNameFromEmail(String email) {
     if (email.contains('@')) {

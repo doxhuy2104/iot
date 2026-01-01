@@ -200,7 +200,7 @@ class _AppDialogWidget extends StatelessWidget {
                     Text(
                       title!,
                       style: Styles.large.smb.copyWith(
-                        color: type != null ? typeColor : Colors.white,
+                        color: type != null ? typeColor : Colors.black,
                         // fontSize: 26,
                       ),
                       textAlign: TextAlign.center,
