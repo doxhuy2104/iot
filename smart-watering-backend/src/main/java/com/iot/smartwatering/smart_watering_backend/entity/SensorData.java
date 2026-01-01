@@ -27,11 +27,11 @@ public class SensorData {
     private Long dataId;
 
     @Column(name = "soil_moisture", nullable = false)
-    private Double soilMoisture;
+    private Float soilMoisture;
     @Column(name = "temparature")
-    private Double temparature;
+    private Float temperature;
     @Column(name = "humidity")
-    private Double humidity;
+    private Float humidity;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 

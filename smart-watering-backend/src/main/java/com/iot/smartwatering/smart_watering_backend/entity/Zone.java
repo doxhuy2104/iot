@@ -35,10 +35,13 @@ public class Zone {
     @Column(name = "threshold_value")
     private Double thresholdValue;
     @Column(name = "auto_mode")
+    @Builder.Default
     private Boolean autoMode = false;
     @Column(name = "weather_mode")
+    @Builder.Default
     private Boolean weatherMode = false;
     @Column(name = "pump_status")
+    @Builder.Default
     private Boolean pumpStatus = false;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -49,20 +52,26 @@ public class Zone {
     private User user;
 
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<Device> devices = new HashSet<>();
 
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<SensorData> sensorData = new HashSet<>();
 
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<FlowData> flowData = new HashSet<>();
 
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<WaterLog> waterLogs = new HashSet<>();
 
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<Schedule> schedules = new HashSet<>();
 
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Alert> alerts = new HashSet<>();
 }

@@ -1,7 +1,5 @@
 package com.iot.smartwatering.smart_watering_backend.entity;
 
-import com.iot.smartwatering.smart_watering_backend.enums.UserRole;
-import com.iot.smartwatering.smart_watering_backend.enums.UserStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -40,15 +38,19 @@ public class User {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     @Column(name = "is_active")
+    @Builder.Default
     private Boolean isActive = true;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
     private Set<Zone> zones = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<UserAction> actions = new HashSet<>();
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<Notification> notifications = new HashSet<>();
     public enum UserRole {
         USER, ADMIN

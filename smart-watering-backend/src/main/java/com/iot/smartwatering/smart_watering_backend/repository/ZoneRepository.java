@@ -8,8 +8,8 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ZoneRepository extends JpaRepository<Zone, Integer> {
-    List<Zone> findByUser_UserId(Integer userId);
+public interface ZoneRepository extends JpaRepository<Zone, Long> {
+    List<Zone> findByUser_UserId(Long userId);
 
     @Query("SELECT z FROM Zone z WHERE z.autoMode = true AND z.pumpStatus = false")
     List<Zone> findZonesForAutoWatering();

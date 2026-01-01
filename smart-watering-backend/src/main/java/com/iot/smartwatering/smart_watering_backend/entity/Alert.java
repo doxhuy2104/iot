@@ -24,6 +24,7 @@ public class Alert {
     @Column(columnDefinition = "TEXT")
     private String message;
     @Column(name = "is_handled")
+    @Builder.Default
     private Boolean isHandled = false;
     @Column(name = "handled_at")
     private LocalDateTime handledAt;

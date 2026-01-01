@@ -35,6 +35,7 @@ public class Device {
     @Column(name = "mqtt_topic_subscribe", length = 255)
     private String mqttTopicSubscribe;
     @Enumerated(EnumType.STRING)
+    @Builder.Default
     private DeviceStatus status = DeviceStatus.OFFLINE;
     @Column(name = "created_at")
     private LocalDateTime createdAt;
@@ -44,12 +45,15 @@ public class Device {
     private Zone zone;
 
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<SensorData> sensorData = new HashSet<>();
 
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<FlowData> flowData = new HashSet<>();
 
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
+    @Builder.Default
     private Set<WaterLog> waterLog = new HashSet<>();
     public enum DeviceType {
         SOIL_MOISTURE_SENSOR,
