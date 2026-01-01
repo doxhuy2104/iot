@@ -8,12 +8,12 @@ import java.time.LocalDateTime;
 @Data
 @Builder
 public class DeviceResponse {
-    private Integer deviceId;
+    private Long deviceId;
     private String deviceName;
     private String type;
     private String identifier;
     private String status;
-    private Integer zoneId;
+    private Long zoneId;
     private String zoneName;
     private LocalDateTime createdAt;
 }

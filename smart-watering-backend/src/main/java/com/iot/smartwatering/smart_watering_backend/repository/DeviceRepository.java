@@ -9,7 +9,7 @@ import java.util.Optional;
 
 @Repository
 public interface DeviceRepository extends JpaRepository<Device, Integer> {
-    List<Device> findByZone_ZoneId(Integer zoneId);
+    List<Device> findByZone_ZoneId(Long zoneId);
     Optional<Device> findByIdentifier(String identifier);
     List<Device> findByType(Device.DeviceType type);
     List<Device> findByStatus(Device.DeviceStatus status);
