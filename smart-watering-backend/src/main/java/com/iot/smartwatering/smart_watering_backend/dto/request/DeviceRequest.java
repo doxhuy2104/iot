@@ -10,7 +10,7 @@ public class DeviceRequest {
     private String deviceName;
 
     @NotNull(message = "Zone ID không được để trống")
-    private Integer zoneId;
+    private Long zoneId;
 
     @NotBlank(message = "Device type không được để trống")
     private String type;
