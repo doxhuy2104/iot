@@ -90,7 +90,11 @@ class _ZonePageState extends State<ZonePage> {
         actions: [
           Button(
             borderRadius: BorderRadius.circular(44),
-            onPress: () {},
+            onPress: () {
+              NavigationHelper.navigate(
+                '${AppRoutes.moduleZone}${ZoneModuleRoutes.addZone}',
+              );
+            },
             child: const Icon(Icons.add),
           ).paddingOnly(right: 12),
         ],

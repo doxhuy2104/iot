@@ -70,6 +70,7 @@ class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
         rt.fold(
           (l) {
             Utils.debugLog(l.reason);
+            AppIndicator.hide();
           },
           (r) {
             emit(state.setState(email: event.email));

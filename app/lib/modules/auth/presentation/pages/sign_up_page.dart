@@ -1,35 +1,27 @@
+import 'package:app/core/components/app_annotated_region.dart';
+import 'package:app/core/components/app_dialog.dart';
+import 'package:app/core/components/app_indicator.dart';
+import 'package:app/core/components/buttons/button.dart';
+import 'package:app/core/components/buttons/primary_button.dart';
+import 'package:app/core/components/inputs/text_input.dart';
+import 'package:app/core/constants/app_colors.dart';
+import 'package:app/core/constants/app_dimensions.dart';
+import 'package:app/core/constants/app_icons.dart';
+import 'package:app/core/constants/app_styles.dart';
+import 'package:app/core/constants/app_validator.dart';
+import 'package:app/core/extensions/localized_extension.dart';
+import 'package:app/core/extensions/num_extension.dart';
+import 'package:app/core/extensions/widget_extension.dart';
+import 'package:app/core/helpers/navigation_helper.dart';
+import 'package:app/core/helpers/shared_preference_helper.dart';
+import 'package:app/core/utils/utils.dart';
+import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
-import 'package:app/core/components/app_annotated_region.dart';
-import 'package:app/core/components/app_dialog.dart';
-import 'package:app/core/components/app_indicator.dart';
-import 'package:app/core/components/buttons/button.dart';
-import 'package:app/core/components/buttons/secondary_button.dart';
-import 'package:app/core/components/buttons/primary_button.dart';
-import 'package:app/core/components/inputs/text_input.dart';
-import 'package:app/core/constants/app_colors.dart';
-import 'package:app/core/constants/app_dimensions.dart';
-import 'package:app/core/constants/app_icons.dart';
-import 'package:app/core/constants/app_images.dart';
-import 'package:app/core/constants/app_routes.dart';
-import 'package:app/core/constants/app_styles.dart';
-import 'package:app/core/constants/app_validator.dart';
-import 'package:app/core/extensions/localized_extension.dart';
-import 'package:app/core/extensions/num_extension.dart';
-import 'package:app/core/extensions/widget_extension.dart';
-import 'package:app/core/helpers/auth_helper.dart';
-import 'package:app/core/helpers/navigation_helper.dart';
-import 'package:app/core/helpers/shared_preference_helper.dart';
-import 'package:app/core/utils/utils.dart';
-import 'package:app/modules/app/general/app_module_routes.dart';
-import 'package:app/modules/app/presentation/bloc/app_bloc.dart';
-import 'package:app/modules/auth/general/auth_module_routes.dart';
-import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({super.key});
@@ -78,7 +70,9 @@ class _SignUpPageState extends State<SignUpPage> {
           children: [
             // Image.asset(AppImages.imgLogo),
             Positioned(
-              top: AppDimensions.insetTop(context),
+              top:
+                  AppDimensions.insetTop(context) -
+                  AppDimensions.keyboardHeight(context),
               left: 8,
               child: Row(
                 children: [
@@ -105,7 +99,11 @@ class _SignUpPageState extends State<SignUpPage> {
               ),
             ),
             Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding: EdgeInsets.only(
+                bottom: AppDimensions.keyboardHeight(context),
+                left: 16,
+                right: 16,
+              ),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -282,9 +280,7 @@ class _SignUpPageState extends State<SignUpPage> {
                                 message: e.toString(),
                                 type: AppDialogType.failed,
                               );
-                            } finally {
-                              // AppIndicator.hide();
-                            }
+                            } finally {}
                           }
                         },
                         text: context.localization.signUp,
