@@ -172,4 +172,24 @@ class ZoneRepository {
       return Left(ApiFailure(reason: e.toString(), statusCode: '400'));
     }
   }
+
+  Future<Either<DioFailure, ZoneModel>> getZoneDetail(int id) async {
+    try {
+      final response = await api.getZoneDetail(id);
+      final responseData = response.data;
+      final mapData = responseData is Map<String, dynamic>
+          ? (responseData['data'] is Map<String, dynamic>
+                ? responseData['data']
+                : responseData)
+          : responseData;
+
+      return Right(ZoneModel.fromJson(mapData)!);
+    } on DioException catch (e) {
+      final reason = DioExceptions.fromDioError(e).toString();
+      final statusCode = e.response?.statusCode.toString() ?? '';
+      return Left(ApiFailure(reason: reason, statusCode: statusCode));
+    } catch (e) {
+      return Left(ApiFailure(reason: e.toString(), statusCode: '400'));
+    }
+  }
 }

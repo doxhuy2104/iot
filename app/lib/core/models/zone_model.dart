@@ -12,6 +12,7 @@ class ZoneModel extends Equatable {
   final bool? autoMode;
   final bool? weatherMode;
   final bool? pumpStatus;
+  final String? deviceIdentifier;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -27,6 +28,7 @@ class ZoneModel extends Equatable {
     this.autoMode,
     this.weatherMode,
     this.pumpStatus,
+    this.deviceIdentifier,
     this.createdAt,
     this.updatedAt,
   });
@@ -47,6 +49,7 @@ class ZoneModel extends Equatable {
     final bool? autoMode = mapData['autoMode'];
     final bool? weatherMode = mapData['weatherMode'];
     final bool? pumpStatus = mapData['pumpStatus'];
+    final String? deviceIdentifier = mapData['deviceIdentifier'];
     final DateTime? createdAt = mapData['createdAt'] != null
         ? (mapData['createdAt'] is DateTime
               ? mapData['createdAt']
@@ -70,6 +73,7 @@ class ZoneModel extends Equatable {
       autoMode: autoMode,
       weatherMode: weatherMode,
       pumpStatus: pumpStatus,
+      deviceIdentifier: deviceIdentifier,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -87,6 +91,7 @@ class ZoneModel extends Equatable {
     'autoMode': autoMode,
     'weatherMode': weatherMode,
     'pumpStatus': pumpStatus,
+    'deviceIdentifier': deviceIdentifier,
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
   };
@@ -103,6 +108,7 @@ class ZoneModel extends Equatable {
     bool? autoMode,
     bool? weatherMode,
     bool? pumpStatus,
+    String? deviceIdentifier,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -118,6 +124,7 @@ class ZoneModel extends Equatable {
       autoMode: autoMode ?? this.autoMode,
       weatherMode: weatherMode ?? this.weatherMode,
       pumpStatus: pumpStatus ?? this.pumpStatus,
+      deviceIdentifier: deviceIdentifier ?? this.deviceIdentifier,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -136,12 +143,13 @@ class ZoneModel extends Equatable {
     autoMode,
     weatherMode,
     pumpStatus,
+    deviceIdentifier,
     createdAt,
     updatedAt,
   ];
 
   @override
   String toString() {
-    return 'Zone(zoneId: $zoneId, userId: $userId, zoneName: $zoneName, location: $location, description: $description, longitude: $longitude, latitude: $latitude, thresholdValue: $thresholdValue, autoMode: $autoMode, weatherMode: $weatherMode, pumpStatus: $pumpStatus, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Zone(zoneId: $zoneId, userId: $userId, zoneName: $zoneName, location: $location, description: $description, longitude: $longitude, latitude: $latitude, thresholdValue: $thresholdValue, autoMode: $autoMode, weatherMode: $weatherMode, pumpStatus: $pumpStatus, deviceIdentifier: $deviceIdentifier, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }

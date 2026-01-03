@@ -3,9 +3,14 @@ import 'dart:async';
 import 'package:app/core/components/app_indicator.dart';
 import 'package:app/core/components/buttons/button.dart';
 import 'package:app/core/constants/app_colors.dart';
+import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/extensions/widget_extension.dart';
+import 'package:app/core/helpers/navigation_helper.dart';
 import 'package:app/core/utils/utils.dart';
+import 'package:app/modules/app/general/app_module_routes.dart';
 import 'package:app/modules/zone/data/repositories/zone_repository.dart';
+import 'package:app/modules/zone/presentation/bloc/zone_bloc.dart';
+import 'package:app/modules/zone/presentation/bloc/zone_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:location/location.dart';
@@ -130,95 +135,137 @@ class _AddDevicePageState extends State<AddDevicePage> {
     await showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Cấu hình WiFi cho thiết bị'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: ssidController,
-              decoration: const InputDecoration(
-                labelText: 'Tên WiFi (SSID)',
-                hintText: 'Nhập tên WiFi nhà bạn',
-              ),
+        content:
+            //  _isLoading
+            //     ? const Center(child: CircularProgressIndicator())
+            //     :
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: ssidController,
+                  decoration: const InputDecoration(
+                    labelText: 'Tên WiFi (SSID)',
+                    hintText: 'Nhập tên WiFi nhà bạn',
+                  ),
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: passController,
+                  decoration: const InputDecoration(
+                    labelText: 'Mật khẩu',
+                    hintText: 'Nhập mật khẩu WiFi',
+                  ),
+                  obscureText: false,
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: passController,
-              decoration: const InputDecoration(
-                labelText: 'Mật khẩu',
-                hintText: 'Nhập mật khẩu WiFi',
-              ),
-              obscureText: false,
-            ),
-          ],
-        ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: Text('Hủy', style: TextStyle(color: AppColors.danger)),
           ),
           TextButton(
             onPressed: () async {
-              // Navigator.pop(context);
-              setState(() {
-                _isLoading = true;
-              });
+              // setState(() {
+              //   _isLoading = true;
+              // });
+              final ssid = ssidController.text;
+              final password = passController.text;
               final rt = await Modular.get<ZoneRepository>().sendWifi(
-                ssid: ssidController.text,
-                password: passController.text,
+                ssid: ssid,
+                password: password,
               );
-              rt.fold((l) => Utils.debugLog(l), (r) async {
-                Utils.debugLog(r);
-                Navigator.pop(context); // Close dialog
-                if (r['status'] == 'success') {
-                  final mac = r['mac'];
-                  final zoneId = widget.zoneId;
-                  if (mac != null && zoneId != null) {
-                    final int? pId = zoneId is int
-                        ? zoneId
-                        : int.tryParse(zoneId.toString());
-                    if (pId != null) {
-                      final createRes = await Modular.get<ZoneRepository>()
-                          .createDevice(
-                            deviceName: 'esp32',
-                            identifier: mac,
-                            zoneId: pId,
-                            type: 'ESP32_CONTROLLER',
-                          );
-                      createRes.fold(
-                        (f) {
-                          setState(() {
-                            _isLoading = false;
-                          });
-                          Utils.showToast(
-                            'Failed to create device: ${f.reason}',
-                          );
-                        },
-                        (s) {
-                          setState(() {
-                            _isLoading = false;
-                          });
-                          Utils.debugLog(s);
-                          Utils.showToast('Device created successfully');
-                          // Navigate back to previous page (ZonePage)
-                          Navigator.pop(context);
-                        },
-                      );
+              Navigator.pop(dialogContext); // Close dialog
+              AppIndicator.show();
+              rt.fold(
+                (l) {
+                  // setState(() {
+                  //   _isLoading = false;
+                  // });
+                  Utils.debugLog(l);
+                  _showProvisioningDialog();
+                },
+                (r) async {
+                  Utils.debugLog(r);
+
+                  if (r['status'] == 'success') {
+                    final mac = r['mac'];
+                    final zoneId = widget.zoneId;
+                    if (mac != null && zoneId != null) {
+                      // await Future.delayed(const Duration(seconds: 2));
+
+                      // Wait for verification
+                      // bool connected = false;
+                      // for (int i = 0; i < 60; i++) {
+                      //   Utils.debugLog('Waiting for connection...');
+                      //   await Future.delayed(const Duration(seconds: 1));
+                      //   final isConnected =
+                      //       await WiFiForIoTPlugin.isConnected();
+                      //   if (isConnected) {
+                      //     connected = true;
+                      //     break;
+                      //   }
+                      // }
+
+                      // if (!connected) {
+                      //   AppIndicator.hide();
+                      //   Utils.showToast("Failed to connect to WiFi $ssid");
+                      //   return;
+                      // }
+
+                      // Disable forceWifiUsage to allow internet access
+                      await WiFiForIoTPlugin.forceWifiUsage(false);
+
+                      // await Future.delayed(const Duration(seconds: 5));
+
+                      final int? pId = zoneId is int
+                          ? zoneId
+                          : int.tryParse(zoneId.toString());
+                      if (pId != null) {
+                        final createRes = await Modular.get<ZoneRepository>()
+                            .createDevice(
+                              deviceName: 'esp32',
+                              identifier: mac,
+                              zoneId: pId,
+                              type: 'ESP32_CONTROLLER',
+                            );
+                        AppIndicator.hide();
+                        if (!mounted) return;
+                        createRes.fold(
+                          (f) {
+                            Utils.showToast(
+                              'Failed to create device: ${f.reason}',
+                            );
+                          },
+                          (s) {
+                            Utils.debugLog(s);
+                            Utils.showToast('Device created successfully');
+                            Modular.get<ZoneBloc>().add(GetZones());
+                            if (mounted) Navigator.pop(context);
+                            NavigationHelper.replace(
+                              '${AppRoutes.moduleApp}${AppModuleRoutes.main}',
+                              args: {'zoneId': zoneId},
+                            );
+                          },
+                        );
+                      }
                     }
+                  } else {
+                    // setState(() {
+                    //   _isLoading = false;
+                    // });
                   }
-                }
-              });
+                },
+              );
             },
             child: const Text('Gửi cấu hình'),
           ),
         ],
       ),
     );
-  }
-
-  Future<void> _sendConfigToEsp32(String ssid, String pass) async {
-    print('Sending config to ESP32: SSID=$ssid, Pass=$pass');
   }
 
   @override

@@ -109,6 +109,26 @@ class ZoneBloc extends HydratedBloc<ZoneEvent, ZoneState> {
             Utils.showToast('Deleted zone successfully');
           },
         );
+      } else if (event is GetZoneDetail) {
+        final result = await repository.getZoneDetail(event.zoneId);
+        result.fold(
+          (failure) {
+            Utils.debugLog(failure.reason);
+          },
+          (zone) {
+            final currentZones = List<ZoneModel>.from(state.zones);
+            final index = currentZones.indexWhere(
+              (z) => z.zoneId == zone.zoneId,
+            );
+            if (index != -1) {
+              currentZones[index] = zone;
+              emit(state.setState(zones: currentZones));
+            } else {
+              currentZones.add(zone);
+              emit(state.setState(zones: currentZones));
+            }
+          },
+        );
       }
     });
   }

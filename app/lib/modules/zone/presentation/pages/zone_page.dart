@@ -201,7 +201,7 @@ class _ZoneCard extends StatelessWidget {
                 onPressed: () {
                   NavigationHelper.navigate(
                     '${AppRoutes.moduleZone}${ZoneModuleRoutes.zoneDetail}',
-                    args: {'zone': zone},
+                    args: {'zoneId': zone.zoneId},
                   );
                 },
                 child: Text(

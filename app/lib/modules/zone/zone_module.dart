@@ -22,7 +22,7 @@ class ZoneModule extends Module {
 
     r.child(
       ZoneModuleRoutes.zoneDetail,
-      child: (context) => ZoneDetailPage(zone: r.args.data['zone']),
+      child: (context) => ZoneDetailPage(zoneId: r.args.data['zoneId']),
     );
     r.child(
       ZoneModuleRoutes.addDevice,

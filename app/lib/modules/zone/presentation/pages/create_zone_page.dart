@@ -4,6 +4,7 @@ import 'package:app/core/components/inputs/text_input.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_routes.dart'; // Re-inserting if missing
 import 'package:app/core/helpers/navigation_helper.dart'; // Re-inserting if missing
+import 'package:app/core/utils/globals.dart';
 import 'package:app/core/utils/utils.dart';
 import 'package:app/modules/zone/general/zone_module_routes.dart'; // Re-inserting if missing
 import 'package:app/modules/zone/presentation/bloc/zone_bloc.dart';
@@ -24,22 +25,66 @@ class _CreateZonePageState extends State<CreateZonePage> {
   final _zoneNameController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _locationController = TextEditingController();
-  final _latitudeController = TextEditingController();
-  final _longitudeController = TextEditingController();
+  // final _latitudeController = TextEditingController();
+  // final _longitudeController = TextEditingController();
   final _thresholdController = TextEditingController();
 
   bool _autoMode = false;
   bool _weatherMode = false;
 
   final _bloc = Modular.get<ZoneBloc>();
+  bool _gettingLocation = false;
+
+  // Future<void> _getCurrentLocation() async {
+  //   setState(() => _gettingLocation = true);
+  //   try {
+  //     final location = Location();
+
+  //     bool serviceEnabled = await location.serviceEnabled();
+  //     if (!serviceEnabled) {
+  //       serviceEnabled = await location.requestService();
+  //       if (!serviceEnabled) {
+  //         return;
+  //       }
+  //     }
+
+  //     PermissionStatus permissionGranted = await location.hasPermission();
+  //     if (permissionGranted == PermissionStatus.denied) {
+  //       permissionGranted = await location.requestPermission();
+  //       if (permissionGranted != PermissionStatus.granted) {
+  //         return;
+  //       }
+  //     }
+
+  //     final locData = await location.getLocation();
+  //     setState(() {
+  //       _latitudeController.text = locData.latitude.toString();
+  //       _longitudeController.text = locData.longitude.toString();
+  //     });
+  //   } catch (e) {
+  //     Utils.showToast('Error getting location: $e');
+  //   } finally {
+  //     setState(() => _gettingLocation = false);
+  //   }
+  // }
+
+  @override
+  void initState() {
+    super.initState();
+    //     Utils.debugLog(Globals.globalLocation)
+    // ;    if (Globals.globalLocation != null) {
+    //       _latitudeController.text = Globals.globalLocation!.latitude.toString();
+    //       _longitudeController.text = Globals.globalLocation!.longitude.toString();
+    //     }
+  }
 
   @override
   void dispose() {
     _zoneNameController.dispose();
     _descriptionController.dispose();
     _locationController.dispose();
-    _latitudeController.dispose();
-    _longitudeController.dispose();
+    // _latitudeController.dispose();
+    // _longitudeController.dispose();
     _thresholdController.dispose();
     super.dispose();
   }
@@ -56,8 +101,8 @@ class _CreateZonePageState extends State<CreateZonePage> {
         zoneName: zoneName,
         description: _descriptionController.text,
         location: _locationController.text,
-        latitude: _latitudeController.text,
-        longitude: _longitudeController.text,
+        latitude: Globals.globalLocation!.latitude.toString(),
+        longitude: Globals.globalLocation!.longitude.toString(),
         thresholdValue: double.tryParse(_thresholdController.text),
         autoMode: _autoMode,
         weatherMode: _weatherMode,
@@ -110,26 +155,7 @@ class _CreateZonePageState extends State<CreateZonePage> {
                   placeholder: 'Location',
                   // keyboardType: TextInputType.number,
                 ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextInput(
-                        controller: _latitudeController,
-                        placeholder: 'Latitude',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: TextInput(
-                        controller: _longitudeController,
-                        placeholder: 'Longitude',
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
+
                 const SizedBox(height: 16),
                 TextInput(
                   controller: _thresholdController,

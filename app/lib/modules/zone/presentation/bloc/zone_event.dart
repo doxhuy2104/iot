@@ -62,3 +62,8 @@ class DeleteZoneEvent extends ZoneEvent {
 
   const DeleteZoneEvent({required this.zoneId});
 }
+
+class GetZoneDetail extends ZoneEvent {
+  final int zoneId;
+  const GetZoneDetail({required this.zoneId});
+}

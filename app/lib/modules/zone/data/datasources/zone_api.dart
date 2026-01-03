@@ -66,4 +66,14 @@ class ZoneApi {
       rethrow;
     }
   }
+
+  Future<Response> getZoneDetail(int id) async {
+    final String url = '/api/zones/$id';
+    try {
+      final response = await dioClient.get(url);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

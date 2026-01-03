@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_keys.dart';
+import 'package:flutter/material.dart';
 
 class AppIndicator {
   static bool _isShowing = false;

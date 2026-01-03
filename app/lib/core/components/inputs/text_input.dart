@@ -1,12 +1,9 @@
-import 'dart:ui';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_icons.dart';
 import 'package:app/core/constants/app_styles.dart';
-import 'package:app/core/extensions/widget_extension.dart';
 import 'package:app/core/utils/utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class TextInput extends StatefulWidget {
   final TextInputType? keyboardType;
@@ -22,6 +19,7 @@ class TextInput extends StatefulWidget {
   final GlobalKey<FormState>? formKey;
   final TextInputAction? textInputAction;
   final FocusNode? nextFocusNode;
+  final bool readOnly;
   const TextInput({
     super.key,
     this.keyboardType,
@@ -37,6 +35,7 @@ class TextInput extends StatefulWidget {
     this.formKey,
     this.textInputAction,
     this.nextFocusNode,
+    this.readOnly = false,
   });
 
   @override
@@ -157,6 +156,7 @@ class _TextInputState extends State<TextInput> {
                   ],
                   Expanded(
                     child: TextFormField(
+                      readOnly: widget.readOnly,
                       controller: widget.controller,
                       textAlignVertical: TextAlignVertical.center,
                       style: Styles.medium.regular,

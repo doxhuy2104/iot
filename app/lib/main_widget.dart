@@ -15,6 +15,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:location/location.dart';
 
 class MainWidget extends StatefulWidget {
   const MainWidget({super.key});
@@ -31,6 +32,7 @@ class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
   void initState() {
     WidgetsBinding.instance.addObserver(this);
     super.initState();
+    _initLocation();
 
     /* always open splash first */
     final accessToken = sharedPreferenceHelper.get(key: AppStores.kAccessToken);
@@ -79,6 +81,31 @@ class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      final location = Location();
+      bool serviceEnabled = await location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await location.requestService();
+        if (!serviceEnabled) return;
+      }
+
+      PermissionStatus permissionGranted = await location.hasPermission();
+      if (permissionGranted == PermissionStatus.denied) {
+        permissionGranted = await location.requestPermission();
+        if (permissionGranted != PermissionStatus.granted) return;
+      }
+
+      final locData = await location.getLocation();
+      Globals.globalLocation = locData;
+      Utils.debugLog(
+        'Global Location: ${locData.latitude}, ${locData.longitude}',
+      );
+    } catch (e) {
+      Utils.debugLog('Error getting location: $e');
+    }
   }
 
   @override
