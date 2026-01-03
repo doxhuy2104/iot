@@ -38,11 +38,11 @@ public class Zone {
     @Column(columnDefinition = "TEXT")
     private String description;
     @Column(nullable = false)
-    private BigDecimal location;
+    private String location;
     @Column(nullable = false)
     private BigDecimal latitude;
     @Column(nullable = false)
-    private String longitude;
+    private BigDecimal longitude;
     @Column(name = "threshold_value")
     private Double thresholdValue;
     @Column(name = "auto_mode")
