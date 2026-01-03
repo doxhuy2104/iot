@@ -11,9 +11,9 @@ import lombok.Data;
 public class ZoneResponse {
     private Long zoneId;
     private String zoneName;
-    private BigDecimal location;
+    private String location;
     private String description;
-    private String longitude;
+    private BigDecimal longitude;
     private BigDecimal latitude;
     private Double thresholdValue;
     private Boolean autoMode;

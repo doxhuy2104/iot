@@ -1,5 +1,6 @@
 package com.iot.smartwatering.smart_watering_backend.service;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,8 +38,8 @@ public class ZoneService {
                 .zoneName(request.getZoneName())
                 .location(request.getLocation())
                 .description(request.getDescription())
-                .longitude(request.getLongitude())
-                .latitude(request.getLatitude())
+                .longitude(new BigDecimal(request.getLongitude()))
+                .latitude(new BigDecimal(request.getLatitude()))
                 .thresholdValue(request.getThresholdValue())
                 .autoMode(Boolean.TRUE.equals(request.getAutoMode()))
                 .weatherMode(Boolean.TRUE.equals(request.getWeatherMode()))
@@ -79,8 +80,8 @@ public class ZoneService {
         zone.setZoneName(request.getZoneName());
         zone.setLocation(request.getLocation());
         zone.setDescription(request.getDescription());
-        zone.setLongitude(request.getLongitude());
-        zone.setLatitude(request.getLatitude());
+        zone.setLongitude(new BigDecimal(request.getLongitude()));
+        zone.setLatitude(new BigDecimal(request.getLatitude()));
         zone.setThresholdValue(request.getThresholdValue());
 
         if (request.getAutoMode() != null) {
