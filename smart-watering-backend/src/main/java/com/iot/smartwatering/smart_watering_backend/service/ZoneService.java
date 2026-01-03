@@ -59,7 +59,7 @@ public class ZoneService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
-        return zoneRepository.findByUser_UserId(user.getUserId())
+        return zoneRepository.findByUser_UserIdOrderByZoneIdDesc(user.getUserId())
                 .stream()
                 .map(this::mapToResponse)
                 .collect(Collectors.toList());
