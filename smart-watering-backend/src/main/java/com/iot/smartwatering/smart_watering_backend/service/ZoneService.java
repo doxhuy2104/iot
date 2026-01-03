@@ -1,5 +1,11 @@
 package com.iot.smartwatering.smart_watering_backend.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import com.iot.smartwatering.smart_watering_backend.dto.request.ZoneRequest;
 import com.iot.smartwatering.smart_watering_backend.dto.response.ZoneResponse;
@@ -8,13 +14,8 @@ import com.iot.smartwatering.smart_watering_backend.entity.Zone;
 import com.iot.smartwatering.smart_watering_backend.repository.SensorDataRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.UserRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -122,7 +123,7 @@ public class ZoneService {
                 .currentMoisture(currentMoisture)
                 .createdAt(zone.getCreatedAt())
                 .updatedAt(zone.getUpdatedAt())
+                .deviceIdentifier(zone.getDevice() != null ? zone.getDevice().getIdentifier() : null)
                 .build();
     }
 }
-

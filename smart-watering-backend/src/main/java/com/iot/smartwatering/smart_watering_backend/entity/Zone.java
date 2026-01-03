@@ -1,15 +1,26 @@
 package com.iot.smartwatering.smart_watering_backend.entity;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
@@ -22,7 +33,7 @@ public class Zone {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "zone_id")
     private Long zoneId;
-    @Column(nullable = false,name = "zone_name")
+    @Column(nullable = false, name = "zone_name")
     private String zoneName;
     @Column(columnDefinition = "TEXT")
     private String description;
@@ -51,9 +62,8 @@ public class Zone {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
-    @Builder.Default
-    private Set<Device> devices = new HashSet<>();
+    @OneToOne(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
+    private Device device;
 
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

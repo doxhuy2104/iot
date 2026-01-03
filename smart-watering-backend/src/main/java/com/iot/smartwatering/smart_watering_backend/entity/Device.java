@@ -1,15 +1,26 @@
 package com.iot.smartwatering.smart_watering_backend.entity;
 
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
-import jakarta.persistence.*;
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Data
@@ -40,8 +51,8 @@ public class Device {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "zone_id", nullable = false)
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "zone_id", nullable = false, unique = true)
     private Zone zone;
 
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
@@ -55,6 +66,7 @@ public class Device {
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<WaterLog> waterLog = new HashSet<>();
+
     public enum DeviceType {
         SOIL_MOISTURE_SENSOR,
         FLOW_SENSOR,
@@ -62,6 +74,7 @@ public class Device {
         VALVE,
         ESP32_CONTROLLER
     }
+
     public enum DeviceStatus {
         ONLINE,
         OFFLINE,
