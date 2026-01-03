@@ -5,8 +5,14 @@ import 'package:app/core/constants/app_styles.dart';
 import 'package:app/core/extensions/localized_extension.dart';
 import 'package:app/core/extensions/widget_extension.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
+import 'package:app/core/models/zone_model.dart';
 import 'package:app/modules/zone/general/zone_module_routes.dart';
+import 'package:app/modules/zone/presentation/bloc/zone_bloc.dart';
+import 'package:app/modules/zone/presentation/bloc/zone_event.dart';
+import 'package:app/modules/zone/presentation/bloc/zone_state.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class ZonePage extends StatefulWidget {
   const ZonePage({super.key});
@@ -17,40 +23,13 @@ class ZonePage extends StatefulWidget {
 
 class _ZonePageState extends State<ZonePage> {
   final TextEditingController _searchController = TextEditingController();
-  String _query = '';
+  final _bloc = Modular.get<ZoneBloc>();
 
-  final List<_ZoneDetail> _zones = const [
-    _ZoneDetail(
-      name: 'Greenhouse A',
-      location: 'North field',
-      soilMoisture: 0.72,
-      temperature: 24.5,
-      devicesOnline: 8,
-      pendingAlerts: 1,
-      irrigationEnabled: true,
-      accent: Color(0xFF7FC8A9),
-    ),
-    _ZoneDetail(
-      name: 'Hydroponics Lab',
-      location: 'Research wing',
-      soilMoisture: 0.58,
-      temperature: 22.1,
-      devicesOnline: 5,
-      pendingAlerts: 0,
-      irrigationEnabled: false,
-      accent: Color(0xFF6CA0DC),
-    ),
-    _ZoneDetail(
-      name: 'Outdoor Plot C',
-      location: 'South terrace',
-      soilMoisture: 0.31,
-      temperature: 30.2,
-      devicesOnline: 3,
-      pendingAlerts: 2,
-      irrigationEnabled: true,
-      accent: Color(0xFFFFC857),
-    ),
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _bloc.add(GetZones());
+  }
 
   @override
   void dispose() {
@@ -58,27 +37,12 @@ class _ZonePageState extends State<ZonePage> {
     super.dispose();
   }
 
-  int get _totalDevices =>
-      _zones.fold(0, (acc, zone) => acc + zone.devicesOnline);
-
-  int get _activeAlerts =>
-      _zones.fold(0, (acc, zone) => acc + zone.pendingAlerts);
-
-  // List<_ZoneDetail> get _filteredZones {
-  //   if (_query.isEmpty) return _zones;
-  //   return _zones
-  //       .where(
-  //         (zone) =>
-  //             zone.name.toLowerCase().contains(_query) ||
-  //             zone.location.toLowerCase().contains(_query),
-  //       )
-  //       .toList();
-  // }
+  Future<void> _refresh() async {
+    _bloc.add(GetZones());
+  }
 
   @override
   Widget build(BuildContext context) {
-    // final filtered = _filteredZones;
-
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
@@ -92,61 +56,57 @@ class _ZonePageState extends State<ZonePage> {
             borderRadius: BorderRadius.circular(44),
             onPress: () {
               NavigationHelper.navigate(
-                '${AppRoutes.moduleZone}${ZoneModuleRoutes.addZone}',
+                '${AppRoutes.moduleZone}${ZoneModuleRoutes.createZone}',
               );
             },
             child: const Icon(Icons.add),
           ).paddingOnly(right: 12),
         ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              ..._zones
-                  .map((zone) => _ZoneCard(zone: zone))
-                  .expand((widget) => [widget, const SizedBox(height: 16)])
-                  .toList()
-                ..removeLast(),
-            ],
-          ),
-        ),
+      body: BlocBuilder<ZoneBloc, ZoneState>(
+        bloc: _bloc,
+        builder: (context, state) {
+          return SafeArea(
+            child: RefreshIndicator(
+              onRefresh: _refresh,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 20,
+                ),
+                physics: AlwaysScrollableScrollPhysics(),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    if (state.zones.isNotEmpty)
+                      ...state.zones
+                          .map((zone) => _ZoneCard(zone: zone))
+                          .expand(
+                            (widget) => [widget, const SizedBox(height: 16)],
+                          )
+                          .toList()
+                        ..removeLast(),
+                  ],
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 }
 
-class _ZoneDetail {
-  final String name;
-  final String location;
-  final double soilMoisture;
-  final double temperature;
-  final int devicesOnline;
-  final int pendingAlerts;
-  final bool irrigationEnabled;
-  final Color accent;
-
-  const _ZoneDetail({
-    required this.name,
-    required this.location,
-    required this.soilMoisture,
-    required this.temperature,
-    required this.devicesOnline,
-    required this.pendingAlerts,
-    required this.irrigationEnabled,
-    required this.accent,
-  });
-}
-
 class _ZoneCard extends StatelessWidget {
-  final _ZoneDetail zone;
+  final ZoneModel zone;
 
   const _ZoneCard({required this.zone});
 
   @override
   Widget build(BuildContext context) {
+    // Determine accent color (can be dynamic or random, logic can be added later)
+    final accent = AppColors.primary;
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -169,7 +129,7 @@ class _ZoneCard extends StatelessWidget {
                 width: 48,
                 height: 48,
                 decoration: BoxDecoration(
-                  color: zone.accent,
+                  color: accent,
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: const Icon(
@@ -183,13 +143,13 @@ class _ZoneCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      zone.name,
+                      zone.zoneName ?? 'Unnamed Zone',
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     Text(
-                      zone.location,
+                      zone.location ?? 'Unknown location',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: AppColors.secondaryText,
                       ),
@@ -198,10 +158,10 @@ class _ZoneCard extends StatelessWidget {
                 ),
               ),
               Icon(
-                zone.irrigationEnabled
+                (zone.pumpStatus ?? false)
                     ? Icons.water_drop
                     : Icons.water_drop_outlined,
-                color: zone.irrigationEnabled
+                color: (zone.pumpStatus ?? false)
                     ? AppColors.primary
                     : AppColors.secondaryText,
               ),
@@ -211,8 +171,11 @@ class _ZoneCard extends StatelessWidget {
 
           _MetricTile(
             label: 'Moisture',
-            value: '${(zone.soilMoisture * 100).round()}%',
-            indicatorValue: zone.soilMoisture.clamp(0, 1),
+            value:
+                '${((zone.thresholdValue ?? 0) * 1).round()}% (Threshold)', // Placeholder using threshold
+            indicatorValue:
+                (zone.thresholdValue ?? 0) /
+                100.0, // Assuming threshold is 0-100
             indicatorColor: AppColors.primary,
           ),
 
@@ -221,27 +184,24 @@ class _ZoneCard extends StatelessWidget {
             children: [
               _Chip(
                 icon: Icons.sensors,
-                label: '${zone.devicesOnline} devices',
+                label: '0 devices', // Placeholder
               ),
               const SizedBox(width: 12),
+              /*
               _Chip(
                 icon: Icons.notification_important_outlined,
-                label:
-                    '${zone.pendingAlerts} alert${zone.pendingAlerts == 1 ? '' : 's'}',
-                background: zone.pendingAlerts > 0
-                    ? AppColors.danger.withOpacity(0.15)
-                    : AppColors.primary.withOpacity(0.1),
-                iconColor: zone.pendingAlerts > 0
-                    ? AppColors.danger
-                    : AppColors.primary,
+                label: '0 alerts',
+                background: AppColors.primary.withOpacity(0.1),
+                iconColor: AppColors.primary,
               ),
+              */
               const Spacer(),
               TextButton(
-                style: ButtonStyle(),
+                style: const ButtonStyle(),
                 onPressed: () {
                   NavigationHelper.navigate(
                     '${AppRoutes.moduleZone}${ZoneModuleRoutes.zoneDetail}',
-                    args: {'name': zone.name},
+                    args: {'zone': zone},
                   );
                 },
                 child: Text(

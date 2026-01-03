@@ -1,15 +1,10 @@
-import 'dart:math';
-
 import 'package:app/core/components/app_dialog.dart';
 import 'package:app/core/components/app_indicator.dart';
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/constants/app_stores.dart';
 import 'package:app/core/helpers/auth_helper.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
-import 'package:app/core/models/user_model.dart';
 import 'package:app/core/utils/globals.dart';
 import 'package:app/core/utils/utils.dart';
 import 'package:app/modules/app/general/app_module_routes.dart';
@@ -17,6 +12,8 @@ import 'package:app/modules/auth/data/repositories/auth_repository.dart';
 import 'package:app/modules/auth/general/auth_module_routes.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_state.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 
 class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
   final AuthRepository repository;
@@ -41,9 +38,14 @@ class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
             // );
             Globals.globalAccessToken = r.token;
             Globals.globalUserId = r.userId.toString();
+            Globals.globalRefreshToken = r.refreshToken; // New
             sharedPreferenceHelper.set(
               key: AppStores.kAccessToken,
               value: r.token!,
+            );
+            sharedPreferenceHelper.set(
+              key: AppStores.kRefreshToken, // New
+              value: r.refreshToken!, // New
             );
             sharedPreferenceHelper.set(
               key: AppStores.kUserId,
@@ -95,7 +97,9 @@ class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
           Globals.globalAccessToken = null;
           Globals.globalUserId = null;
           Globals.globalUserUUID = null;
+          Globals.globalRefreshToken = null;
           sharedPreferenceHelper.remove(key: AppStores.kAccessToken);
+          sharedPreferenceHelper.remove(key: AppStores.kRefreshToken);
           sharedPreferenceHelper.remove(key: AppStores.kUserId);
           sharedPreferenceHelper.remove(key: AppStores.kUserUUID);
           emit(state.reset());

@@ -1,7 +1,7 @@
 import 'package:equatable/equatable.dart';
 
 class ZoneModel extends Equatable {
-  final int? id;
+  final int? zoneId;
   final int? userId;
   final String? zoneName;
   final String? location;
@@ -16,7 +16,7 @@ class ZoneModel extends Equatable {
   final DateTime? updatedAt;
 
   const ZoneModel({
-    this.id,
+    this.zoneId,
     this.userId,
     this.zoneName,
     this.location,
@@ -34,34 +34,32 @@ class ZoneModel extends Equatable {
   static ZoneModel? fromJson(Map<String, dynamic>? mapData) {
     if (mapData == null) return null;
 
-    final int? id = mapData['zone_id'] ?? mapData['id'];
-    final int? userId = mapData['user_id'] ?? mapData['userId'];
-    final String? zoneName = mapData['zone_name'] ?? mapData['zoneName'];
-    final String? location = mapData['location']
-        ?.toString(); // backend BigDecimal -> String
+    final int? zoneId = mapData['zoneId'] ?? mapData['id'];
+    final int? userId = mapData['userId'];
+    final String? zoneName = mapData['zoneName'];
+    final String? location = mapData['location']?.toString();
     final String? description = mapData['description'];
-    final String? longitude =
-        mapData['longitude'] ?? mapData['longtitude']; // phòng trường hợp typo
+    final String? longitude = (mapData['longitude'] ?? mapData['longtitude'])
+        ?.toString();
     final String? latitude = mapData['latitude']?.toString();
-    final double? thresholdValue =
-        (mapData['threshold_value'] ?? mapData['thresholdValue'] as num?)
-            ?.toDouble();
-    final bool? autoMode = mapData['auto_mode'] ?? mapData['autoMode'];
-    final bool? weatherMode = mapData['weather_mode'] ?? mapData['weatherMode'];
-    final bool? pumpStatus = mapData['pump_status'] ?? mapData['pumpStatus'];
-    final DateTime? createdAt = mapData['created_at'] != null
-        ? (mapData['created_at'] is DateTime
-              ? mapData['created_at']
-              : DateTime.tryParse(mapData['created_at'].toString()))
+    final double? thresholdValue = (mapData['thresholdValue'] as num?)
+        ?.toDouble();
+    final bool? autoMode = mapData['autoMode'];
+    final bool? weatherMode = mapData['weatherMode'];
+    final bool? pumpStatus = mapData['pumpStatus'];
+    final DateTime? createdAt = mapData['createdAt'] != null
+        ? (mapData['createdAt'] is DateTime
+              ? mapData['createdAt']
+              : DateTime.tryParse(mapData['createdAt'].toString()))
         : null;
-    final DateTime? updatedAt = mapData['updated_at'] != null
-        ? (mapData['updated_at'] is DateTime
-              ? mapData['updated_at']
-              : DateTime.tryParse(mapData['updated_at'].toString()))
+    final DateTime? updatedAt = mapData['updatedAt'] != null
+        ? (mapData['updatedAt'] is DateTime
+              ? mapData['updatedAt']
+              : DateTime.tryParse(mapData['updatedAt'].toString()))
         : null;
 
     return ZoneModel(
-      id: id,
+      zoneId: zoneId,
       userId: userId,
       zoneName: zoneName,
       location: location,
@@ -78,23 +76,23 @@ class ZoneModel extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-    'zone_id': id,
-    'user_id': userId,
-    'zone_name': zoneName,
+    'zoneId': zoneId,
+    'userId': userId,
+    'zoneName': zoneName,
     'location': location,
     'description': description,
     'longitude': longitude,
     'latitude': latitude,
-    'threshold_value': thresholdValue,
-    'auto_mode': autoMode,
-    'weather_mode': weatherMode,
-    'pump_status': pumpStatus,
-    'created_at': createdAt?.toIso8601String(),
-    'updated_at': updatedAt?.toIso8601String(),
+    'thresholdValue': thresholdValue,
+    'autoMode': autoMode,
+    'weatherMode': weatherMode,
+    'pumpStatus': pumpStatus,
+    'createdAt': createdAt?.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
   };
 
   ZoneModel copyWith({
-    int? id,
+    int? zoneId,
     int? userId,
     String? zoneName,
     String? location,
@@ -109,7 +107,7 @@ class ZoneModel extends Equatable {
     DateTime? updatedAt,
   }) {
     return ZoneModel(
-      id: id ?? this.id,
+      zoneId: zoneId ?? this.zoneId,
       userId: userId ?? this.userId,
       zoneName: zoneName ?? this.zoneName,
       location: location ?? this.location,
@@ -127,7 +125,7 @@ class ZoneModel extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
+    zoneId,
     userId,
     zoneName,
     location,
@@ -144,6 +142,6 @@ class ZoneModel extends Equatable {
 
   @override
   String toString() {
-    return 'Zone(id: $id, userId: $userId, zoneName: $zoneName, location: $location, description: $description, longitude: $longitude, latitude: $latitude, thresholdValue: $thresholdValue, autoMode: $autoMode, weatherMode: $weatherMode, pumpStatus: $pumpStatus, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Zone(zoneId: $zoneId, userId: $userId, zoneName: $zoneName, location: $location, description: $description, longitude: $longitude, latitude: $latitude, thresholdValue: $thresholdValue, autoMode: $autoMode, weatherMode: $weatherMode, pumpStatus: $pumpStatus, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }

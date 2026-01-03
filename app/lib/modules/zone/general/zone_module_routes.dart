@@ -2,5 +2,6 @@ class ZoneModuleRoutes {
   ZoneModuleRoutes._();
 
   static const String zoneDetail = '/zone-detail';
-  static const String addZone = '/add-zone';
+  static const String addDevice = '/add-device';
+  static const String createZone = '/create-zone';
 }

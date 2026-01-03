@@ -72,7 +72,7 @@ enum DeviceStatus {
 }
 
 class DeviceModel extends Equatable {
-  final int? id;
+  final int? deviceId;
   final int? zoneId;
   final String? deviceName;
   final DeviceType? type;
@@ -83,7 +83,7 @@ class DeviceModel extends Equatable {
   final DateTime? createdAt;
 
   const DeviceModel({
-    this.id,
+    this.deviceId,
     this.zoneId,
     this.deviceName,
     this.type,
@@ -97,26 +97,31 @@ class DeviceModel extends Equatable {
   static DeviceModel? fromJson(Map<String, dynamic>? mapData) {
     if (mapData == null) return null;
 
-    final int? id = mapData['device_id'] ?? mapData['id'];
-    final int? zoneId = mapData['zone_id'] ?? mapData['zoneId'];
-    final String? deviceName = mapData['device_name'] ?? mapData['deviceName'];
+    final int? deviceId =
+        mapData['deviceId'] ?? mapData['id'] ?? mapData['device_id'];
+    final int? zoneId = mapData['zoneId'] ?? mapData['zone_id'];
+    final String? deviceName = mapData['deviceName'] ?? mapData['device_name'];
     final DeviceType? type = DeviceType.fromString(
       mapData['type'] ?? mapData['device_type'],
     );
     final String? identifier = mapData['identifier'];
     final String? mqttTopicPublish =
-        mapData['mqtt_topic_publish'] ?? mapData['mqttTopicPublish'];
+        mapData['mqttTopicPublish'] ?? mapData['mqtt_topic_publish'];
     final String? mqttTopicSubscribe =
-        mapData['mqtt_topic_subscribe'] ?? mapData['mqttTopicSubscribe'];
+        mapData['mqttTopicSubscribe'] ?? mapData['mqtt_topic_subscribe'];
     final DeviceStatus? status = DeviceStatus.fromString(mapData['status']);
-    final DateTime? createdAt = mapData['created_at'] != null
-        ? (mapData['created_at'] is DateTime
-              ? mapData['created_at']
-              : DateTime.tryParse(mapData['created_at'].toString()))
-        : null;
+    final DateTime? createdAt = mapData['createdAt'] != null
+        ? (mapData['createdAt'] is DateTime
+              ? mapData['createdAt']
+              : DateTime.tryParse(mapData['createdAt'].toString()))
+        : (mapData['created_at'] != null
+              ? (mapData['created_at'] is DateTime
+                    ? mapData['created_at']
+                    : DateTime.tryParse(mapData['created_at'].toString()))
+              : null);
 
     return DeviceModel(
-      id: id,
+      deviceId: deviceId,
       zoneId: zoneId,
       deviceName: deviceName,
       type: type,
@@ -129,19 +134,19 @@ class DeviceModel extends Equatable {
   }
 
   Map<String, dynamic> toJson() => {
-    'device_id': id,
-    'zone_id': zoneId,
-    'device_name': deviceName,
+    'deviceId': deviceId,
+    'zoneId': zoneId,
+    'deviceName': deviceName,
     'type': type?.backendName,
     'identifier': identifier,
-    'mqtt_topic_publish': mqttTopicPublish,
-    'mqtt_topic_subscribe': mqttTopicSubscribe,
+    'mqttTopicPublish': mqttTopicPublish,
+    'mqttTopicSubscribe': mqttTopicSubscribe,
     'status': status?.backendName,
-    'created_at': createdAt?.toIso8601String(),
+    'createdAt': createdAt?.toIso8601String(),
   };
 
   DeviceModel copyWith({
-    int? id,
+    int? deviceId,
     int? zoneId,
     String? deviceName,
     DeviceType? type,
@@ -152,7 +157,7 @@ class DeviceModel extends Equatable {
     DateTime? createdAt,
   }) {
     return DeviceModel(
-      id: id ?? this.id,
+      deviceId: deviceId ?? this.deviceId,
       zoneId: zoneId ?? this.zoneId,
       deviceName: deviceName ?? this.deviceName,
       type: type ?? this.type,
@@ -166,7 +171,7 @@ class DeviceModel extends Equatable {
 
   @override
   List<Object?> get props => [
-    id,
+    deviceId,
     zoneId,
     deviceName,
     type,
@@ -179,6 +184,6 @@ class DeviceModel extends Equatable {
 
   @override
   String toString() {
-    return 'Device(id: $id, zoneId: $zoneId, deviceName: $deviceName, type: $type, identifier: $identifier, mqttTopicPublish: $mqttTopicPublish, mqttTopicSubscribe: $mqttTopicSubscribe, status: $status, createdAt: $createdAt)';
+    return 'Device(deviceId: $deviceId, zoneId: $zoneId, deviceName: $deviceName, type: $type, identifier: $identifier, mqttTopicPublish: $mqttTopicPublish, mqttTopicSubscribe: $mqttTopicSubscribe, status: $status, createdAt: $createdAt)';
   }
 }

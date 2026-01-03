@@ -1,8 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:app/core/constants/app_keys.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/constants/app_stores.dart';
@@ -16,6 +11,10 @@ import 'package:app/modules/app/general/app_module_routes.dart';
 import 'package:app/modules/auth/general/auth_module_routes.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 
 class MainWidget extends StatefulWidget {
   const MainWidget({super.key});
@@ -37,34 +36,34 @@ class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
     final accessToken = sharedPreferenceHelper.get(key: AppStores.kAccessToken);
     if (accessToken != null) {
       Modular.setInitialRoute('${AppRoutes.moduleApp}${AppModuleRoutes.main}');
+      Globals.globalAccessToken = accessToken.toString();
+      Utils.debugLog('AccessToken found: $accessToken');
 
-      if (FirebaseAuth.instance.currentUser != null) {
-        // check if accessToken is not exp
-        String? accessToken = Globals.globalAccessToken;
+      // if (FirebaseAuth.instance.currentUser != null) {
+      // check if accessToken is not exp
+      // String? accessToken = Globals.globalAccessToken;
 
-        if (JwtDecoder.isExpired(accessToken as String)) {
-          Utils.debugLogSuccess('Access token is expired');
-          // FirebaseAuth.instance.currentUser?.getIdToken().then((idToken) {
-          // Utils.debugLogSuccess('Relogin $idToken');
-          _authBloc.add(
-            SignInRequest(
-              username: _authBloc.state.user?.username ?? '',
-              password:
-                  sharedPreferenceHelper
-                      .get(key: AppStores.kPassword)
-                      ?.toString() ??
-                  '',
-            ),
-          );
-          // });
-        } else {
-          Utils.debugLogSuccess('Access token is not expired $accessToken');
-          // _authBloc.add(GetDetailUserRequested());
-        }
+      if (JwtDecoder.isExpired(accessToken.toString())) {
+        Utils.debugLogSuccess('Access token is expired');
+        _authBloc.add(
+          SignInRequest(
+            username: _authBloc.state.user?.username ?? '',
+            password:
+                sharedPreferenceHelper
+                    .get(key: AppStores.kPassword)
+                    ?.toString() ??
+                '',
+          ),
+        );
       } else {
-        /* emit logout */
-        // _authBloc.add(AuthLogoutRequested());
+        Utils.debugLogSuccess('Access token is not expired $accessToken');
+        // _authBloc.add(GetDetailUserRequested());
       }
+      // } else {
+      //   Utils.debugLog('Firebase user is null');
+      //   /* emit logout */
+      //   // _authBloc.add(AuthLogoutRequested());
+      // }
     } else {
       Modular.setInitialRoute(
         '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',

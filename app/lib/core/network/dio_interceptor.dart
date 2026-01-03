@@ -1,12 +1,11 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:app/core/constants/app_keys.dart';
 import 'package:app/core/helpers/general_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
 import 'package:app/core/utils/globals.dart';
 import 'package:app/core/utils/utils.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class DioInterceptor extends Interceptor {
   final _sharedPreferenceHelper = Modular.get<SharedPreferenceHelper>();
@@ -38,7 +37,8 @@ class DioInterceptor extends Interceptor {
 
     if (options.extra['noAuth'] != true) {
       if (Globals.globalAccessToken != null) {
-        options.headers['Authorization'] = '${Globals.globalAccessToken}';
+        options.headers['Authorization'] =
+            'Bearer ${Globals.globalAccessToken}';
       }
     }
 

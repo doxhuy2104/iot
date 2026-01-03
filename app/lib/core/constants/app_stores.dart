@@ -7,4 +7,5 @@ class AppStores {
   static const String kUserId = "USER_ID";
   static const String kUserUUID = "USER_UUID";
   static const String kPassword = "PASSWORD";
+  static const String kRefreshToken = "REFRESH_TOKEN";
 }
