@@ -1,31 +1,28 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/gestures.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:flutter_svg/svg.dart';
 import 'package:app/core/components/app_annotated_region.dart';
 import 'package:app/core/components/app_dialog.dart';
 import 'package:app/core/components/app_indicator.dart';
-import 'package:app/core/components/buttons/secondary_button.dart';
 import 'package:app/core/components/buttons/primary_button.dart';
 import 'package:app/core/components/inputs/text_input.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_dimensions.dart';
 import 'package:app/core/constants/app_icons.dart';
-import 'package:app/core/constants/app_images.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/constants/app_styles.dart';
 import 'package:app/core/constants/app_validator.dart';
 import 'package:app/core/extensions/localized_extension.dart';
 import 'package:app/core/extensions/num_extension.dart';
 import 'package:app/core/extensions/widget_extension.dart';
-import 'package:app/core/helpers/auth_helper.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
 import 'package:app/core/utils/utils.dart';
 import 'package:app/modules/auth/general/auth_module_routes.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/gestures.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:flutter_svg/svg.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -77,16 +74,16 @@ class _SignInPageState extends State<SignInPage> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Tên đăng nhập', style: Styles.large.regular),
+                    Text('Username', style: Styles.large.regular),
                     4.verticalSpace,
                     TextInput(
                       formKey: _formKey,
-                      errorMessage: context.localization.invalidEmail,
+                      errorMessage: "Invalid username",
                       controller: _usernameController,
                       focusNode: _usernameFocusNode,
-                      placeholder: context.localization.enterEmail,
+                      placeholder: "Enter username",
                       icon: SvgPicture.asset(
-                        AppIcons.icEmail,
+                        AppIcons.icAccountInactive,
                         colorFilter: ColorFilter.mode(
                           AppColors.secondaryText,
                           BlendMode.srcIn,

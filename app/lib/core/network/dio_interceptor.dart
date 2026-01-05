@@ -1,9 +1,12 @@
 import 'dart:convert';
 
+import 'package:app/core/constants/app_routes.dart';
+import 'package:app/core/constants/app_stores.dart';
 import 'package:app/core/helpers/general_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
 import 'package:app/core/utils/globals.dart';
 import 'package:app/core/utils/utils.dart';
+import 'package:app/modules/auth/general/auth_module_routes.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
@@ -131,7 +134,7 @@ class DioInterceptor extends Interceptor {
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
     final fullUrl = err.requestOptions.uri.toString();
     Utils.debugLogError(
       '${err.requestOptions.method} $fullUrl (baseUrl: ${err.requestOptions.baseUrl}, path: ${err.requestOptions.path}) body:${err.requestOptions.data} query:${err.requestOptions.queryParameters} status:${err.response?.statusCode?.toString()} error:${err.response?.data}',
@@ -197,12 +200,74 @@ class DioInterceptor extends Interceptor {
     }
 
     // check if 401 or 403, remove token and navigate to login
-    if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
+    if (err.response?.statusCode == 401) {
+      if (err.requestOptions.path.contains('/auth/refresh-token')) {
+        _handleExpiredSession();
+        return handler.reject(err);
+      }
+
+      final refreshToken = Globals.globalRefreshToken;
+      if (refreshToken != null) {
+        try {
+          final response = await dio.post(
+            '/api/auth/refresh-token',
+            data: {'refreshToken': refreshToken},
+            options: Options(extra: {'noAuth': true, 'notShowError': true}),
+          );
+
+          if (response.statusCode == 200) {
+            var mapData = response.data;
+            // Check if data is wrapped in 'data' field
+            if (mapData['data'] != null && mapData['data'] is Map) {
+              mapData = mapData['data'];
+            }
+
+            final newToken = mapData['token'] ?? mapData['accessToken'];
+            final newRefreshToken = mapData['refreshToken'];
+            final tokenType =
+                mapData['tokenType'] ?? mapData['type'] ?? 'Bearer';
+
+            if (newToken != null) {
+              Globals.globalAccessToken = newToken;
+              _sharedPreferenceHelper.set(
+                key: AppStores.kAccessToken,
+                value: newToken,
+              );
+
+              if (newRefreshToken != null) {
+                Globals.globalRefreshToken = newRefreshToken;
+                _sharedPreferenceHelper.set(
+                  key: AppStores.kRefreshToken,
+                  value: newRefreshToken,
+                );
+              }
+
+              err.requestOptions.headers['Authorization'] =
+                  '$tokenType $newToken';
+
+              final retryResponse = await dio.fetch(err.requestOptions);
+              return handler.resolve(retryResponse);
+            }
+          }
+        } catch (e) {
+          Utils.debugLogError('Refresh token failed: $e');
+        }
+      }
+
       Utils.debugLogError('Unauthorized');
+      _handleExpiredSession();
       // AuthBloc authBloc = Modular.get<AuthBloc>();
       // authBloc.add(AuthLogoutRequested(forceLogout: true));
     }
 
     return handler.reject(err);
+  }
+
+  void _handleExpiredSession() {
+    Globals.globalAccessToken = null;
+    Globals.globalRefreshToken = null;
+    _sharedPreferenceHelper.remove(key: AppStores.kAccessToken);
+    _sharedPreferenceHelper.remove(key: AppStores.kRefreshToken);
+    Modular.to.navigate('${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}');
   }
 }

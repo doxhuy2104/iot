@@ -8,7 +8,8 @@ class ZoneModel extends Equatable {
   final String? description;
   final String? longitude;
   final String? latitude;
-  final double? thresholdValue;
+  final double? thresholdMin;
+  final double? thresholdMax;
   final bool? autoMode;
   final bool? weatherMode;
   final bool? pumpStatus;
@@ -24,7 +25,8 @@ class ZoneModel extends Equatable {
     this.description,
     this.longitude,
     this.latitude,
-    this.thresholdValue,
+    this.thresholdMin,
+    this.thresholdMax,
     this.autoMode,
     this.weatherMode,
     this.pumpStatus,
@@ -44,8 +46,12 @@ class ZoneModel extends Equatable {
     final String? longitude = (mapData['longitude'] ?? mapData['longtitude'])
         ?.toString();
     final String? latitude = mapData['latitude']?.toString();
-    final double? thresholdValue = (mapData['thresholdValue'] as num?)
-        ?.toDouble();
+    final double? thresholdMin =
+        (mapData['thresholdMin'] ?? mapData['minThreshold'] as num?)
+            ?.toDouble();
+    final double? thresholdMax =
+        (mapData['thresholdMax'] ?? mapData['maxThreshold'] as num?)
+            ?.toDouble();
     final bool? autoMode = mapData['autoMode'];
     final bool? weatherMode = mapData['weatherMode'];
     final bool? pumpStatus = mapData['pumpStatus'];
@@ -69,7 +75,8 @@ class ZoneModel extends Equatable {
       description: description,
       longitude: longitude,
       latitude: latitude,
-      thresholdValue: thresholdValue,
+      thresholdMin: thresholdMin,
+      thresholdMax: thresholdMax,
       autoMode: autoMode,
       weatherMode: weatherMode,
       pumpStatus: pumpStatus,
@@ -87,7 +94,8 @@ class ZoneModel extends Equatable {
     'description': description,
     'longitude': longitude,
     'latitude': latitude,
-    'thresholdValue': thresholdValue,
+    'thresholdMin': thresholdMin,
+    'thresholdMax': thresholdMax,
     'autoMode': autoMode,
     'weatherMode': weatherMode,
     'pumpStatus': pumpStatus,
@@ -104,7 +112,8 @@ class ZoneModel extends Equatable {
     String? description,
     String? longitude,
     String? latitude,
-    double? thresholdValue,
+    double? thresholdMin,
+    double? thresholdMax,
     bool? autoMode,
     bool? weatherMode,
     bool? pumpStatus,
@@ -120,7 +129,8 @@ class ZoneModel extends Equatable {
       description: description ?? this.description,
       longitude: longitude ?? this.longitude,
       latitude: latitude ?? this.latitude,
-      thresholdValue: thresholdValue ?? this.thresholdValue,
+      thresholdMin: thresholdMin ?? this.thresholdMin,
+      thresholdMax: thresholdMax ?? this.thresholdMax,
       autoMode: autoMode ?? this.autoMode,
       weatherMode: weatherMode ?? this.weatherMode,
       pumpStatus: pumpStatus ?? this.pumpStatus,
@@ -139,7 +149,8 @@ class ZoneModel extends Equatable {
     description,
     longitude,
     latitude,
-    thresholdValue,
+    thresholdMin,
+    thresholdMax,
     autoMode,
     weatherMode,
     pumpStatus,
@@ -150,6 +161,6 @@ class ZoneModel extends Equatable {
 
   @override
   String toString() {
-    return 'Zone(zoneId: $zoneId, userId: $userId, zoneName: $zoneName, location: $location, description: $description, longitude: $longitude, latitude: $latitude, thresholdValue: $thresholdValue, autoMode: $autoMode, weatherMode: $weatherMode, pumpStatus: $pumpStatus, deviceIdentifier: $deviceIdentifier, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Zone(zoneId: $zoneId, userId: $userId, zoneName: $zoneName, location: $location, description: $description, longitude: $longitude, latitude: $latitude, thresholdMin: $thresholdMin, thresholdMax: $thresholdMax, autoMode: $autoMode, weatherMode: $weatherMode, pumpStatus: $pumpStatus, deviceIdentifier: $deviceIdentifier, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }

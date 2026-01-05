@@ -27,7 +27,7 @@ class MainWidget extends StatefulWidget {
 class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
   bool _firstLoad = false;
   final sharedPreferenceHelper = Modular.get<SharedPreferenceHelper>();
-  final _authBloc = Modular.get<AuthBloc>();
+
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
@@ -36,36 +36,31 @@ class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
 
     /* always open splash first */
     final accessToken = sharedPreferenceHelper.get(key: AppStores.kAccessToken);
+    final refreshToken = sharedPreferenceHelper.get(
+      key: AppStores.kRefreshToken,
+    );
+
     if (accessToken != null) {
       Modular.setInitialRoute('${AppRoutes.moduleApp}${AppModuleRoutes.main}');
       Globals.globalAccessToken = accessToken.toString();
+      if (refreshToken != null) {
+        Globals.globalRefreshToken = refreshToken.toString();
+      }
       Utils.debugLog('AccessToken found: $accessToken');
-
-      // if (FirebaseAuth.instance.currentUser != null) {
-      // check if accessToken is not exp
-      // String? accessToken = Globals.globalAccessToken;
 
       if (JwtDecoder.isExpired(accessToken.toString())) {
         Utils.debugLogSuccess('Access token is expired');
-        _authBloc.add(
-          SignInRequest(
-            username: _authBloc.state.user?.username ?? '',
-            password:
-                sharedPreferenceHelper
-                    .get(key: AppStores.kPassword)
-                    ?.toString() ??
-                '',
-          ),
-        );
+        if (refreshToken != null) {
+          final authBloc = Modular.get<AuthBloc>();
+          authBloc.add(RefreshTokenRequested(refreshToken.toString()));
+        } else {
+          Modular.setInitialRoute(
+            '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
+          );
+        }
       } else {
         Utils.debugLogSuccess('Access token is not expired $accessToken');
-        // _authBloc.add(GetDetailUserRequested());
       }
-      // } else {
-      //   Utils.debugLog('Firebase user is null');
-      //   /* emit logout */
-      //   // _authBloc.add(AuthLogoutRequested());
-      // }
     } else {
       Modular.setInitialRoute(
         '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',

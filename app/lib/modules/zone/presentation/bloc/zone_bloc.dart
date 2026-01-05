@@ -22,7 +22,8 @@ class ZoneBloc extends HydratedBloc<ZoneEvent, ZoneState> {
           description: event.description,
           longitude: event.longitude,
           latitude: event.latitude,
-          thresholdValue: event.thresholdValue,
+          thresholdMin: event.thresholdMin,
+          thresholdMax: event.thresholdMax,
           autoMode: event.autoMode,
           weatherMode: event.weatherMode,
         );
@@ -61,17 +62,24 @@ class ZoneBloc extends HydratedBloc<ZoneEvent, ZoneState> {
         );
       } else if (event is UpdateZoneEvent) {
         AppIndicator.show();
+
+        final currentZone = state.zones.firstWhere(
+          (z) => z.zoneId == event.zoneId,
+          orElse: () => const ZoneModel(),
+        );
+
         final result = await repository.updateZone(
           id: event.zoneId,
-          zoneName: event.zoneName,
-          location: event.location,
-          description: event.description,
-          longitude: event.longitude,
-          latitude: event.latitude,
-          thresholdValue: event.thresholdValue,
-          autoMode: event.autoMode,
-          weatherMode: event.weatherMode,
-          pumpStatus: event.pumpStatus,
+          zoneName: event.zoneName ?? currentZone.zoneName,
+          location: event.location ?? currentZone.location,
+          description: event.description ?? currentZone.description,
+          longitude: event.longitude ?? currentZone.longitude,
+          latitude: event.latitude ?? currentZone.latitude,
+          thresholdMin: event.thresholdMin ?? currentZone.thresholdMin,
+          thresholdMax: event.thresholdMax ?? currentZone.thresholdMax,
+          autoMode: event.autoMode ?? currentZone.autoMode,
+          weatherMode: event.weatherMode ?? currentZone.weatherMode,
+          pumpStatus: event.pumpStatus ?? currentZone.pumpStatus,
         );
         result.fold(
           (failure) {

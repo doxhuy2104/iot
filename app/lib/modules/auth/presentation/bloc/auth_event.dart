@@ -29,3 +29,8 @@ class SignUpRequest extends AuthEvent {
 class SignOutRequest extends AuthEvent {
   const SignOutRequest();
 }
+
+class RefreshTokenRequested extends AuthEvent {
+  final String refreshToken;
+  const RefreshTokenRequested(this.refreshToken);
+}

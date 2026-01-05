@@ -1,3 +1,4 @@
+import 'package:app/core/utils/globals.dart';
 import 'package:app/core/utils/utils.dart';
 import 'package:dio/dio.dart';
 
@@ -13,13 +14,22 @@ class ZoneApi {
     }
   }
 
-  Future<Response> sendWifi(String ssid, String password) async {
+  Future<Response> sendWifi(
+    String ssid,
+    String password,
+    int zoneId,
+
+  ) async {
     const String url = 'http://192.168.4.1/wifi';
     try {
       final response = await dioClient.post(
         url,
         options: Options(headers: {'Content-Type': 'application/json'}),
-        data: {'ssid': ssid, 'password': password},
+        data: {
+          'ssid': ssid,
+          'password': password,
+          'zoneId': zoneId,
+        },
       );
       return response;
     } catch (e) {

@@ -38,9 +38,10 @@ class ZoneRepository {
   Future<Either<DioFailure, Map<String, dynamic>>> sendWifi({
     required String ssid,
     required String password,
+    required int zoneId,
   }) async {
     try {
-      final response = await api.sendWifi(ssid, password);
+      final response = await api.sendWifi(ssid, password, zoneId);
 
       return Right(response.data);
     } on DioException catch (e) {
@@ -58,7 +59,8 @@ class ZoneRepository {
     String? description,
     String? longitude,
     String? latitude,
-    double? thresholdValue,
+    double? thresholdMin,
+    double? thresholdMax,
     bool? autoMode,
     bool? weatherMode,
   }) async {
@@ -69,7 +71,8 @@ class ZoneRepository {
         'description': description,
         'longitude': longitude,
         'latitude': latitude,
-        'thresholdValue': thresholdValue,
+        'thresholdMin': thresholdMin,
+        'thresholdMax': thresholdMax,
         'autoMode': autoMode,
         'weatherMode': weatherMode,
       };
@@ -107,6 +110,7 @@ class ZoneRepository {
         // 'mqttTopicPublish': mqttTopicPublish,
         // 'mqttTopicSubscribe': mqttTopicSubscribe,
       };
+
       final response = await api.createDevice(data);
       return Right(response.data);
     } on DioException catch (e) {
@@ -134,11 +138,12 @@ class ZoneRepository {
   Future<Either<DioFailure, ZoneModel>> updateZone({
     required int id,
     String? zoneName,
-    double? location,
+    String? location,
     String? description,
     String? longitude,
-    double? latitude,
-    double? thresholdValue,
+    String? latitude,
+    double? thresholdMin,
+    double? thresholdMax,
     bool? autoMode,
     bool? weatherMode,
     bool? pumpStatus,
@@ -150,7 +155,8 @@ class ZoneRepository {
       if (description != null) data['description'] = description;
       if (longitude != null) data['longitude'] = longitude;
       if (latitude != null) data['latitude'] = latitude;
-      if (thresholdValue != null) data['thresholdValue'] = thresholdValue;
+      if (thresholdMin != null) data['thresholdMin'] = thresholdMin;
+      if (thresholdMax != null) data['thresholdMax'] = thresholdMax;
       if (autoMode != null) data['autoMode'] = autoMode;
       if (weatherMode != null) data['weatherMode'] = weatherMode;
       if (pumpStatus != null) data['pumpStatus'] = pumpStatus;

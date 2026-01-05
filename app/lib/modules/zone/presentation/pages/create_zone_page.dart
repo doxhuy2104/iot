@@ -27,7 +27,9 @@ class _CreateZonePageState extends State<CreateZonePage> {
   final _locationController = TextEditingController();
   // final _latitudeController = TextEditingController();
   // final _longitudeController = TextEditingController();
-  final _thresholdController = TextEditingController();
+  final _minThresholdController = TextEditingController(text: '20');
+  final _maxThresholdController = TextEditingController(text: '40');
+  RangeValues _currentRangeValues = const RangeValues(20, 40);
 
   bool _autoMode = false;
   bool _weatherMode = false;
@@ -83,9 +85,8 @@ class _CreateZonePageState extends State<CreateZonePage> {
     _zoneNameController.dispose();
     _descriptionController.dispose();
     _locationController.dispose();
-    // _latitudeController.dispose();
-    // _longitudeController.dispose();
-    _thresholdController.dispose();
+    _minThresholdController.dispose();
+    _maxThresholdController.dispose();
     super.dispose();
   }
 
@@ -103,7 +104,8 @@ class _CreateZonePageState extends State<CreateZonePage> {
         location: _locationController.text,
         latitude: Globals.globalLocation!.latitude.toString(),
         longitude: Globals.globalLocation!.longitude.toString(),
-        thresholdValue: double.tryParse(_thresholdController.text),
+        thresholdMin: _currentRangeValues.start,
+        thresholdMax: _currentRangeValues.end,
         autoMode: _autoMode,
         weatherMode: _weatherMode,
       ),
@@ -130,7 +132,10 @@ class _CreateZonePageState extends State<CreateZonePage> {
           Utils.showToast('Zone created successfully');
           NavigationHelper.replace(
             '${AppRoutes.moduleZone}${ZoneModuleRoutes.addDevice}',
-            args: {'zoneId': newZone.zoneId},
+            args: {
+              'zoneId': newZone.zoneId,
+              'threshold': newZone.thresholdMin ?? 0.0,
+            },
           );
         },
         builder: (context, state) {
@@ -157,25 +162,139 @@ class _CreateZonePageState extends State<CreateZonePage> {
                 ),
 
                 const SizedBox(height: 16),
-                TextInput(
-                  controller: _thresholdController,
-                  placeholder: 'Threshold Value',
-                  keyboardType: TextInputType.number,
+                const SizedBox(height: 8),
+                Text(
+                  // 'Threshold Range: ${_currentRangeValues.start.round()}% - ${_currentRangeValues.end.round()}%',
+                  'Threshold Range:',
+
+                  style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
+                RangeSlider(
+                  values: _currentRangeValues,
+                  min: 0,
+                  max: 100,
+                  divisions: 100,
+                  activeColor: AppColors.primary,
+                  inactiveColor: AppColors.primary.withOpacity(0.2),
+                  labels: RangeLabels(
+                    _currentRangeValues.start.round().toString(),
+                    _currentRangeValues.end.round().toString(),
+                  ),
+                  onChanged: (RangeValues values) {
+                    setState(() {
+                      _currentRangeValues = values;
+                      _minThresholdController.text = values.start
+                          .round()
+                          .toString();
+                      _maxThresholdController.text = values.end
+                          .round()
+                          .toString();
+                    });
+                  },
+                ),
+                // const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Focus(
+                        onFocusChange: (hasFocus) {
+                          if (!hasFocus) {
+                            final val =
+                                double.tryParse(_minThresholdController.text) ??
+                                0;
+                            if (val >= 0 && val < _currentRangeValues.end) {
+                              setState(() {
+                                _currentRangeValues = RangeValues(
+                                  val,
+                                  _currentRangeValues.end,
+                                );
+                              });
+                            } else {
+                              _minThresholdController.text = _currentRangeValues
+                                  .start
+                                  .round()
+                                  .toString();
+                            }
+                          }
+                        },
+                        child: TextInput(
+                          controller: _minThresholdController,
+                          placeholder: 'Min (%)',
+                          keyboardType: TextInputType.number,
+                          onChanged: (val) {
+                            final v = double.tryParse(val);
+                            if (v != null &&
+                                v >= 0 &&
+                                v < _currentRangeValues.end) {
+                              setState(() {
+                                _currentRangeValues = RangeValues(
+                                  v,
+                                  _currentRangeValues.end,
+                                );
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Focus(
+                        onFocusChange: (hasFocus) {
+                          if (!hasFocus) {
+                            final val =
+                                double.tryParse(_maxThresholdController.text) ??
+                                100;
+                            if (val > _currentRangeValues.start && val <= 100) {
+                              setState(() {
+                                _currentRangeValues = RangeValues(
+                                  _currentRangeValues.start,
+                                  val,
+                                );
+                              });
+                            } else {
+                              _maxThresholdController.text = _currentRangeValues
+                                  .end
+                                  .round()
+                                  .toString();
+                            }
+                          }
+                        },
+                        child: TextInput(
+                          controller: _maxThresholdController,
+                          placeholder: 'Max (%)',
+                          keyboardType: TextInputType.number,
+                          onChanged: (val) {
+                            final v = double.tryParse(val);
+                            if (v != null &&
+                                v > _currentRangeValues.start &&
+                                v <= 100) {
+                              setState(() {
+                                _currentRangeValues = RangeValues(
+                                  _currentRangeValues.start,
+                                  v,
+                                );
+                              });
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                // SwitchListTile(
+                //   title: const Text('Auto Mode'),
+                //   value: _autoMode,
+                //   onChanged: (val) => setState(() => _autoMode = val),
+                //   activeColor: AppColors.primary,
+                // ),
+                // SwitchListTile(
+                //   title: const Text('Weather Mode'),
+                //   value: _weatherMode,
+                //   onChanged: (val) => setState(() => _weatherMode = val),
+                //   activeColor: AppColors.primary,
+                // ),
                 const SizedBox(height: 16),
-                SwitchListTile(
-                  title: const Text('Auto Mode'),
-                  value: _autoMode,
-                  onChanged: (val) => setState(() => _autoMode = val),
-                  activeColor: AppColors.primary,
-                ),
-                SwitchListTile(
-                  title: const Text('Weather Mode'),
-                  value: _weatherMode,
-                  onChanged: (val) => setState(() => _weatherMode = val),
-                  activeColor: AppColors.primary,
-                ),
-                const SizedBox(height: 32),
                 SizedBox(
                   width: double.infinity,
                   height: 50,

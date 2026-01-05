@@ -8,7 +8,21 @@ import 'package:mqtt_client/mqtt_server_client.dart';
 class MqttService {
   MqttServerClient? client;
 
-  Future<void> connect() async {
+  Future<void> connect({String? willTopic, String? willMessage}) async {
+    // Force reconnection if willTopic is provided, to ensure LWT is updated
+    if (willTopic != null &&
+        client != null &&
+        client!.connectionStatus!.state == MqttConnectionState.connected) {
+      client!.disconnect();
+      // Wait for disconnection to complete slightly
+    }
+
+    if (client != null &&
+        client!.connectionStatus!.state == MqttConnectionState.connected) {
+      Utils.debugLog('MQTT Client already connected');
+      return;
+    }
+
     String? mqttUrl = dotenv.env['MQTT_URL'];
     if (mqttUrl == null) {
       Utils.debugLog('MQTT_URL not found in .env');
@@ -37,8 +51,8 @@ class MqttService {
         .withClientIdentifier(
           'flutter_client_${DateTime.now().millisecondsSinceEpoch}',
         )
-        .withWillTopic('willtopic')
-        .withWillMessage('My Will message')
+        .withWillTopic(willTopic ?? 'willtopic')
+        .withWillMessage(willMessage ?? 'My Will message')
         .startClean()
         .withWillQos(MqttQos.atLeastOnce);
     client!.connectionMessage = connMess;
@@ -94,5 +108,24 @@ class MqttService {
     } else {
       Utils.debugLog('MQTT Client not connected, cannot subscribe.');
     }
+  }
+
+  void publish(String topic, String message) {
+    if (client != null &&
+        client!.connectionStatus!.state == MqttConnectionState.connected) {
+      final builder = MqttClientPayloadBuilder();
+      builder.addString(message);
+      client!.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
+      Utils.debugLog('Published "$message" to $topic');
+    } else {
+      Utils.debugLog('MQTT Client not connected, cannot publish.');
+    }
+  }
+
+  Stream<List<MqttReceivedMessage<MqttMessage>>>? get updates =>
+      client?.updates;
+
+  void disconnect() {
+    client?.disconnect();
   }
 }

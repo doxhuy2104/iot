@@ -13,7 +13,8 @@ class CreateZone extends ZoneEvent {
   final String? description;
   final String? longitude;
   final String? latitude;
-  final double? thresholdValue;
+  final double? thresholdMin;
+  final double? thresholdMax;
   final bool? autoMode;
   final bool? weatherMode;
 
@@ -23,7 +24,8 @@ class CreateZone extends ZoneEvent {
     this.description,
     this.longitude,
     this.latitude,
-    this.thresholdValue,
+    this.thresholdMin,
+    this.thresholdMax,
     this.autoMode,
     this.weatherMode,
   });
@@ -34,11 +36,12 @@ class GetZones extends ZoneEvent {}
 class UpdateZoneEvent extends ZoneEvent {
   final int zoneId;
   final String? zoneName;
-  final double? location;
+  final String? location;
   final String? description;
   final String? longitude;
-  final double? latitude;
-  final double? thresholdValue;
+  final String? latitude;
+  final double? thresholdMin;
+  final double? thresholdMax;
   final bool? autoMode;
   final bool? weatherMode;
   final bool? pumpStatus;
@@ -50,7 +53,8 @@ class UpdateZoneEvent extends ZoneEvent {
     this.description,
     this.longitude,
     this.latitude,
-    this.thresholdValue,
+    this.thresholdMin,
+    this.thresholdMax,
     this.autoMode,
     this.weatherMode,
     this.pumpStatus,

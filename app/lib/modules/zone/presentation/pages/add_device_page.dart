@@ -4,7 +4,6 @@ import 'package:app/core/components/app_indicator.dart';
 import 'package:app/core/components/buttons/button.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_routes.dart';
-import 'package:app/core/extensions/widget_extension.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
 import 'package:app/core/utils/utils.dart';
 import 'package:app/modules/app/general/app_module_routes.dart';
@@ -19,7 +18,8 @@ import 'package:wifi_scan/wifi_scan.dart';
 
 class AddDevicePage extends StatefulWidget {
   final dynamic zoneId;
-  const AddDevicePage({super.key, this.zoneId});
+  final double threshold;
+  const AddDevicePage({super.key, this.zoneId, required this.threshold});
 
   @override
   State<StatefulWidget> createState() => _AddDevicePageState();
@@ -177,6 +177,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
               final rt = await Modular.get<ZoneRepository>().sendWifi(
                 ssid: ssid,
                 password: password,
+                zoneId: widget.zoneId,
               );
               Navigator.pop(dialogContext); // Close dialog
               AppIndicator.show();
@@ -247,7 +248,7 @@ class _AddDevicePageState extends State<AddDevicePage> {
                             if (mounted) Navigator.pop(context);
                             NavigationHelper.replace(
                               '${AppRoutes.moduleApp}${AppModuleRoutes.main}',
-                              args: {'zoneId': zoneId},
+                              // args: {'zoneId': zoneId},
                             );
                           },
                         );
@@ -278,13 +279,13 @@ class _AddDevicePageState extends State<AddDevicePage> {
         backgroundColor: AppColors.primary,
         foregroundColor: Colors.white,
         elevation: 0,
-        actions: [
-          Button(
-            borderRadius: BorderRadius.circular(44),
-            onPress: () {},
-            child: const Icon(Icons.add),
-          ).paddingOnly(right: 12),
-        ],
+        // actions: [
+        //   Button(
+        //     borderRadius: BorderRadius.circular(44),
+        //     onPress: () {},
+        //     child: const Icon(Icons.add),
+        //   ).paddingOnly(right: 12),
+        // ],
       ),
       body: SafeArea(
         child: RefreshIndicator(

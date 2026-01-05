@@ -72,7 +72,8 @@ class UserModel extends Equatable {
     final int? userId = mapData['userId'] ?? mapData['user_id'];
     final String? avatar = mapData['avatar'];
     final String? username = mapData['username'];
-    final String? token = mapData['token'] ?? mapData['access_token'];
+    final String? token =
+        mapData['token'] ?? mapData['access_token'] ?? mapData['accessToken'];
     final String? refreshToken = mapData['refreshToken'];
     final String? tokenType = mapData['tokenType'] ?? mapData['type'];
     final String? email = mapData['email'];

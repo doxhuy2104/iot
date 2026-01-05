@@ -92,6 +92,53 @@ class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
             );
           },
         );
+      } else if (event is RefreshTokenRequested) {
+        final rt = await repository.refreshToken(event.refreshToken);
+        rt.fold(
+          (l) {
+            Utils.debugLog(l.reason);
+            // If refresh fails on main widget start, force logout
+            add(const SignOutRequest());
+          },
+          (r) {
+            // r is Map<String, dynamic> here
+            final newToken =
+                r['token'] ?? r['accessToken'] ?? r['access_token'];
+            final newRefreshToken = r['refreshToken'];
+            final tokenType = r['tokenType'] ?? r['type'] ?? 'Bearer';
+
+            if (newToken != null) {
+              Globals.globalAccessToken = newToken;
+              sharedPreferenceHelper.set(
+                key: AppStores.kAccessToken,
+                value: newToken,
+              );
+            }
+
+            if (newRefreshToken != null) {
+              Globals.globalRefreshToken = newRefreshToken;
+              sharedPreferenceHelper.set(
+                key: AppStores.kRefreshToken,
+                value: newRefreshToken,
+              );
+            }
+
+            // Merge new tokens with existing user info logic
+            final currentUser = state.user;
+            final updatedUser = currentUser?.copyWith(
+              token: newToken,
+              refreshToken: newRefreshToken,
+              // Maintain existing tokenType or update if returned
+              tokenType: tokenType,
+            );
+
+            if (updatedUser != null) {
+              emit(state.setState(user: updatedUser));
+            }
+
+            Utils.debugLogSuccess('Refresh token success');
+          },
+        );
       } else if (event is SignOutRequest) {
         void forceLogout() {
           Globals.globalAccessToken = null;

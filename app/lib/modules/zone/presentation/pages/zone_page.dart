@@ -69,25 +69,17 @@ class _ZonePageState extends State<ZonePage> {
           return SafeArea(
             child: RefreshIndicator(
               onRefresh: _refresh,
-              child: SingleChildScrollView(
+              child: ListView.builder(
+                itemCount: state.zones.length,
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 20,
                 ),
                 physics: AlwaysScrollableScrollPhysics(),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    if (state.zones.isNotEmpty)
-                      ...state.zones
-                          .map((zone) => _ZoneCard(zone: zone))
-                          .expand(
-                            (widget) => [widget, const SizedBox(height: 16)],
-                          )
-                          .toList()
-                        ..removeLast(),
-                  ],
-                ),
+                itemBuilder: (context, index) {
+                  final zone = state.zones[index];
+                  return _ZoneCard(zone: zone).paddingOnly(bottom: 16);
+                },
               ),
             ),
           );
@@ -125,19 +117,19 @@ class _ZoneCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: accent,
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: const Icon(
-                  Icons.location_on_outlined,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 16),
+              // Container(
+              //   width: 48,
+              //   height: 48,
+              //   decoration: BoxDecoration(
+              //     color: accent,
+              //     borderRadius: BorderRadius.circular(16),
+              //   ),
+              //   child: const Icon(
+              //     Icons.location_on_outlined,
+              //     color: Colors.white,
+              //   ),
+              // ),
+              // const SizedBox(width: 16),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,20 +164,19 @@ class _ZoneCard extends StatelessWidget {
           _MetricTile(
             label: 'Moisture',
             value:
-                '${((zone.thresholdValue ?? 0) * 1).round()}% (Threshold)', // Placeholder using threshold
+                '${((zone.thresholdMin ?? 0).round())}% - ${((zone.thresholdMax ?? 100).round())}% (Threshold)',
             indicatorValue:
-                (zone.thresholdValue ?? 0) /
-                100.0, // Assuming threshold is 0-100
+                (zone.thresholdMin ?? 0) / 100.0, // Assuming threshold is 0-100
             indicatorColor: AppColors.primary,
           ),
 
           const SizedBox(height: 16),
           Row(
             children: [
-              _Chip(
-                icon: Icons.sensors,
-                label: '0 devices', // Placeholder
-              ),
+              // _Chip(
+              //   icon: Icons.sensors,
+              //   label: '0 devices', // Placeholder
+              // ),
               const SizedBox(width: 12),
               /*
               _Chip(
@@ -272,41 +263,41 @@ class _MetricTile extends StatelessWidget {
   }
 }
 
-class _Chip extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final Color background;
-  final Color? iconColor;
+// class _Chip extends StatelessWidget {
+//   final IconData icon;
+//   final String label;
+//   final Color background;
+//   final Color? iconColor;
 
-  const _Chip({
-    required this.icon,
-    required this.label,
-    this.background = const Color(0xFFF5F5F5),
-    this.iconColor,
-  });
+//   const _Chip({
+//     required this.icon,
+//     required this.label,
+//     this.background = const Color(0xFFF5F5F5),
+//     this.iconColor,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 18, color: iconColor ?? AppColors.secondaryText),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w500,
-              color: AppColors.primaryText,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Container(
+//       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+//       decoration: BoxDecoration(
+//         color: background,
+//         borderRadius: BorderRadius.circular(20),
+//       ),
+//       child: Row(
+//         mainAxisSize: MainAxisSize.min,
+//         children: [
+//           Icon(icon, size: 18, color: iconColor ?? AppColors.secondaryText),
+//           const SizedBox(width: 6),
+//           Text(
+//             label,
+//             style: Theme.of(context).textTheme.bodySmall?.copyWith(
+//               fontWeight: FontWeight.w500,
+//               color: AppColors.primaryText,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }

@@ -20,6 +20,7 @@ class TextInput extends StatefulWidget {
   final TextInputAction? textInputAction;
   final FocusNode? nextFocusNode;
   final bool readOnly;
+  final Function(String)? onChanged;
   const TextInput({
     super.key,
     this.keyboardType,
@@ -36,6 +37,7 @@ class TextInput extends StatefulWidget {
     this.textInputAction,
     this.nextFocusNode,
     this.readOnly = false,
+    this.onChanged,
   });
 
   @override
@@ -179,6 +181,7 @@ class _TextInputState extends State<TextInput> {
                       },
                       focusNode: _focus,
                       onChanged: (value) {
+                        widget.onChanged?.call(value);
                         // widget.validator?.call(value);
                         if (_errorMessage.isNotEmpty) {
                           setState(() {
