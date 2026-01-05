@@ -40,7 +40,8 @@ public class ZoneService {
                 .description(request.getDescription())
                 .longitude(new BigDecimal(request.getLongitude()))
                 .latitude(new BigDecimal(request.getLatitude()))
-                .thresholdValue(request.getThresholdValue())
+                .thresholdMin(request.getThresholdMin())
+                .thresholdMax(request.getThresholdMax())
                 .autoMode(Boolean.TRUE.equals(request.getAutoMode()))
                 .weatherMode(Boolean.TRUE.equals(request.getWeatherMode()))
                 .pumpStatus(false)
@@ -82,7 +83,8 @@ public class ZoneService {
         zone.setDescription(request.getDescription());
         zone.setLongitude(new BigDecimal(request.getLongitude()));
         zone.setLatitude(new BigDecimal(request.getLatitude()));
-        zone.setThresholdValue(request.getThresholdValue());
+        zone.setThresholdMin(request.getThresholdMin());
+        zone.setThresholdMax(request.getThresholdMax());
 
         if (request.getAutoMode() != null) {
             zone.setAutoMode(request.getAutoMode());
@@ -117,7 +119,8 @@ public class ZoneService {
                 .description(zone.getDescription())
                 .longitude(zone.getLongitude())
                 .latitude(zone.getLatitude())
-                .thresholdValue(zone.getThresholdValue())
+                .thresholdMin(zone.getThresholdMin())
+                .thresholdMax(zone.getThresholdMax())
                 .autoMode(zone.getAutoMode())
                 .weatherMode(zone.getWeatherMode())
                 .pumpStatus(zone.getPumpStatus())

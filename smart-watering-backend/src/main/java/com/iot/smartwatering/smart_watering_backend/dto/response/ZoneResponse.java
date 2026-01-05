@@ -15,7 +15,8 @@ public class ZoneResponse {
     private String description;
     private BigDecimal longitude;
     private BigDecimal latitude;
-    private Double thresholdValue;
+    private Double thresholdMin;
+    private Double thresholdMax;
     private Boolean autoMode;
     private Boolean weatherMode;
     private Boolean pumpStatus;

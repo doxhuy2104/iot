@@ -1,17 +1,27 @@
 package com.iot.smartwatering.smart_watering_backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iot.smartwatering.smart_watering_backend.entity.*;
-import com.iot.smartwatering.smart_watering_backend.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.iot.smartwatering.smart_watering_backend.entity.Alert;
+import com.iot.smartwatering.smart_watering_backend.entity.Device;
+import com.iot.smartwatering.smart_watering_backend.entity.FlowData;
+import com.iot.smartwatering.smart_watering_backend.entity.SensorData;
+import com.iot.smartwatering.smart_watering_backend.entity.Zone;
+import com.iot.smartwatering.smart_watering_backend.repository.AlertRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.FlowDataRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.SensorDataRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -70,12 +80,15 @@ public class MqttMessageHandler {
                     .orElseThrow(() -> new RuntimeException("Zone not found: " + zoneId));
 
             // Safely extract sensor values
-            Float moisture = data.containsKey("moisture") && data.get("moisture") != null ?
-                    ((Number) data.get("moisture")).floatValue() : null;
-            Float temperature = data.containsKey("temperature") && data.get("temperature") != null ?
-                    ((Number) data.get("temperature")).floatValue() : null;
-            Float humidity = data.containsKey("humidity") && data.get("humidity") != null ?
-                    ((Number) data.get("humidity")).floatValue() : null;
+            Float moisture = data.containsKey("moisture") && data.get("moisture") != null
+                    ? ((Number) data.get("moisture")).floatValue()
+                    : null;
+            Float temperature = data.containsKey("temperature") && data.get("temperature") != null
+                    ? ((Number) data.get("temperature")).floatValue()
+                    : null;
+            Float humidity = data.containsKey("humidity") && data.get("humidity") != null
+                    ? ((Number) data.get("humidity")).floatValue()
+                    : null;
 
             SensorData sensorData = SensorData.builder()
                     .zone(zone)
@@ -176,20 +189,19 @@ public class MqttMessageHandler {
     }
 
     private void checkThresholdAndAlert(Zone zone, SensorData sensorData) {
-        if (zone.getThresholdValue() != null &&
-                sensorData.getSoilMoisture() < zone.getThresholdValue()) {
+        if (zone.getThresholdMin() != null &&
+                sensorData.getSoilMoisture() < zone.getThresholdMin()) {
 
             Alert alert = Alert.builder()
                     .zone(zone)
                     .severity(Alert.AlertSeverity.WARNING)
                     .message(String.format(
-                            "Độ ẩm đất thấp (%,.1f%%) dưới ngưỡng (%,.1f%%)",
+                            "Độ ẩm đất thấp (%,.1f%%) dưới ngưỡng minimum (%,.1f%%)",
                             sensorData.getSoilMoisture(),
-                            zone.getThresholdValue()))
+                            zone.getThresholdMin()))
                     .build();
 
             alertRepository.save(alert);
         }
     }
 }
-

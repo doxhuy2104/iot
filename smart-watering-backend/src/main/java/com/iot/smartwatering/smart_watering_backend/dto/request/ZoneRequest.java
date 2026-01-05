@@ -14,7 +14,8 @@ public class ZoneRequest {
     private String longitude;
     @NotBlank(message = "Latitude không được để trống")
     private String latitude;
-    private Double thresholdValue;
+    private Double thresholdMin;
+    private Double thresholdMax;
     private Boolean autoMode;
     private Boolean weatherMode;
 }

@@ -43,8 +43,11 @@ public class Zone {
     private BigDecimal latitude;
     @Column(nullable = false)
     private BigDecimal longitude;
-    @Column(name = "threshold_value")
-    private Double thresholdValue;
+
+    @Column(name = "threshold_min")
+    private Double thresholdMin;
+    @Column(name = "threshold_max")
+    private Double thresholdMax;
     @Column(name = "auto_mode")
     @Builder.Default
     private Boolean autoMode = false;
