@@ -13,6 +13,7 @@ import com.iot.smartwatering.smart_watering_backend.entity.Alert;
 import com.iot.smartwatering.smart_watering_backend.entity.Device;
 import com.iot.smartwatering.smart_watering_backend.entity.FlowData;
 import com.iot.smartwatering.smart_watering_backend.entity.SensorData;
+import com.iot.smartwatering.smart_watering_backend.entity.User;
 import com.iot.smartwatering.smart_watering_backend.entity.Zone;
 import com.iot.smartwatering.smart_watering_backend.repository.AlertRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
