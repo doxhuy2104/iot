@@ -218,27 +218,27 @@ class _SignInPageState extends State<SignInPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        width: 60,
-                        height: 1,
-                        decoration: BoxDecoration(color: AppColors.contentText),
-                      ),
-                      Text(
-                        context.localization.ortherLogin,
-                        style: Styles.medium.regular.copyWith(
-                          color: AppColors.contentText,
-                        ),
-                      ).paddingSymmetric(h: 8),
-                      Container(
-                        width: 60,
-                        height: 1,
-                        decoration: BoxDecoration(color: AppColors.contentText),
-                      ),
-                    ],
-                  ),
+                  // Row(
+                  //   mainAxisAlignment: MainAxisAlignment.center,
+                  //   children: [
+                  //     Container(
+                  //       width: 60,
+                  //       height: 1,
+                  //       decoration: BoxDecoration(color: AppColors.contentText),
+                  //     ),
+                  //     Text(
+                  //       context.localization.ortherLogin,
+                  //       style: Styles.medium.regular.copyWith(
+                  //         color: AppColors.contentText,
+                  //       ),
+                  //     ).paddingSymmetric(h: 8),
+                  //     Container(
+                  //       width: 60,
+                  //       height: 1,
+                  //       decoration: BoxDecoration(color: AppColors.contentText),
+                  //     ),
+                  //   ],
+                  // ),
                   12.verticalSpace,
                   // SecondaryButton(
                   //   widget: Stack(

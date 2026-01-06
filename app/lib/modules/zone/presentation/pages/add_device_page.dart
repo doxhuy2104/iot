@@ -18,8 +18,9 @@ import 'package:wifi_scan/wifi_scan.dart';
 
 class AddDevicePage extends StatefulWidget {
   final dynamic zoneId;
-  final double threshold;
-  const AddDevicePage({super.key, this.zoneId, required this.threshold});
+  final bool isConfig;
+
+  const AddDevicePage({super.key, this.zoneId, this.isConfig = false});
 
   @override
   State<StatefulWidget> createState() => _AddDevicePageState();
@@ -219,6 +220,13 @@ class _AddDevicePageState extends State<AddDevicePage> {
 
                       // Disable forceWifiUsage to allow internet access
                       await WiFiForIoTPlugin.forceWifiUsage(false);
+
+                      if (widget.isConfig) {
+                        AppIndicator.hide();
+                        Utils.showToast('Config WiFi successfully');
+                        if (mounted) Navigator.pop(context);
+                        return;
+                      }
 
                       // await Future.delayed(const Duration(seconds: 5));
 

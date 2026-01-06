@@ -1,7 +1,6 @@
 import 'package:app/core/components/buttons/button.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_routes.dart';
-import 'package:app/core/constants/app_styles.dart';
 import 'package:app/core/extensions/localized_extension.dart';
 import 'package:app/core/extensions/widget_extension.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
@@ -100,111 +99,47 @@ class _ZoneCard extends StatelessWidget {
     final accent = AppColors.primary;
 
     return Container(
-      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 16,
-            offset: const Offset(0, 8),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Container(
-              //   width: 48,
-              //   height: 48,
-              //   decoration: BoxDecoration(
-              //     color: accent,
-              //     borderRadius: BorderRadius.circular(16),
-              //   ),
-              //   child: const Icon(
-              //     Icons.location_on_outlined,
-              //     color: Colors.white,
-              //   ),
-              // ),
-              // const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      zone.zoneName ?? 'Unnamed Zone',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Text(
-                      zone.location ?? 'Unknown location',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: AppColors.secondaryText,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Icon(
-                (zone.pumpStatus ?? false)
-                    ? Icons.water_drop
-                    : Icons.water_drop_outlined,
-                color: (zone.pumpStatus ?? false)
-                    ? AppColors.primary
-                    : AppColors.secondaryText,
-              ),
-            ],
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        leading: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: accent.withOpacity(0.1),
+            shape: BoxShape.circle,
           ),
-          const SizedBox(height: 16),
-
-          _MetricTile(
-            label: 'Moisture',
-            value:
-                '${((zone.thresholdMin ?? 0).round())}% - ${((zone.thresholdMax ?? 100).round())}% (Threshold)',
-            indicatorValue:
-                (zone.thresholdMin ?? 0) / 100.0, // Assuming threshold is 0-100
-            indicatorColor: AppColors.primary,
-          ),
-
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              // _Chip(
-              //   icon: Icons.sensors,
-              //   label: '0 devices', // Placeholder
-              // ),
-              const SizedBox(width: 12),
-              /*
-              _Chip(
-                icon: Icons.notification_important_outlined,
-                label: '0 alerts',
-                background: AppColors.primary.withOpacity(0.1),
-                iconColor: AppColors.primary,
-              ),
-              */
-              const Spacer(),
-              TextButton(
-                style: const ButtonStyle(),
-                onPressed: () {
-                  NavigationHelper.navigate(
-                    '${AppRoutes.moduleZone}${ZoneModuleRoutes.zoneDetail}',
-                    args: {'zoneId': zone.zoneId},
-                  );
-                },
-                child: Text(
-                  'Details',
-                  style: Styles.medium.smb.copyWith(
-                    color: AppColors.primaryDark,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
+          child: Icon(Icons.location_on, color: accent),
+        ),
+        title: Text(
+          zone.zoneName ?? 'Unnamed Zone',
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+        ),
+        subtitle: Text(
+          zone.location ?? 'Unknown location',
+          style: const TextStyle(color: Colors.grey),
+        ),
+        trailing: const Icon(
+          Icons.arrow_forward_ios,
+          size: 16,
+          color: Colors.grey,
+        ),
+        onTap: () {
+          NavigationHelper.navigate(
+            '${AppRoutes.moduleZone}${ZoneModuleRoutes.zoneDetail}',
+            args: {'zoneId': zone.zoneId},
+          );
+        },
       ),
     );
   }

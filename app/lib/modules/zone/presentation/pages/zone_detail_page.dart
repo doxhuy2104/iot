@@ -4,7 +4,9 @@ import 'dart:convert';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/extensions/localized_extension.dart';
+import 'package:app/core/extensions/num_extension.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
+import 'package:app/core/models/water_log_model.dart';
 import 'package:app/core/models/zone_model.dart';
 import 'package:app/core/services/mqtt_service.dart';
 import 'package:app/core/utils/utils.dart';
@@ -16,6 +18,7 @@ import 'package:app/modules/zone/presentation/bloc/zone_state.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:intl/intl.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 
 class ZoneDetailPage extends StatefulWidget {
@@ -32,10 +35,17 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
   final _bloc = Modular.get<ZoneBloc>();
   final _mqttService = Modular.get<MqttService>();
   bool _isLoading = true;
-  double _manualWateringDuration = 5.0; // Minutes
+  double _targetHumidity = 80.0; // Default target humidity
   StreamSubscription? _mqttSubscription;
-  double _currentHumidity = 0.0;
-  String _selectedMode = 'Manual'; // Manual, Auto, Schedule
+  double _currentHumidity = 36;
+  // String _selectedMode = 'Manual'; // Manual, Auto, Schedule
+  bool _isDeviceOffline = false;
+  bool _isWatering = false;
+
+  // History Logs State
+  bool _isLoadingLogs = true;
+  List<WaterLogModel> _logs = [];
+  String _logError = '';
 
   @override
   void initState() {
@@ -43,14 +53,53 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
     WidgetsBinding.instance.addObserver(this);
     _connectAndPublishOnline();
     _getZoneDetail();
+    _getWaterLogs();
   }
+
+  void _getWaterLogs() async {
+    try {
+      final result = await Modular.get<ZoneRepository>().getWaterLogs(
+        widget.zoneId,
+      );
+      if (!mounted) return;
+
+      result.fold(
+        (failure) {
+          setState(() {
+            _isLoadingLogs = false;
+            _logError = failure.reason;
+          });
+        },
+        (logs) {
+          setState(() {
+            _isLoadingLogs = false;
+            _logs = logs;
+          });
+        },
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isLoadingLogs = false;
+        _logError = e.toString();
+      });
+    }
+  }
+
+  // Flow Sensor Data
+  double _currentFlowRate = 0.0;
+  double _currentVolume = 0.0;
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _connectAndPublishOnline();
     } else if (state == AppLifecycleState.paused) {
-      _mqttService.publish('irrigation/status/${widget.zoneId}', 'offline');
+      _mqttService.publish(
+        'irrigation/status/${widget.zoneId}',
+        'offline',
+        retain: true,
+      );
       // We might want to disconnect or just let LWT handle it if the OS kills the socket.
       // But explicit disconnect avoids 'Software caused connection abort' on resume often.
       // However, if we disconnect, LWT won't fire (unless we set it to).
@@ -63,13 +112,21 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
   }
 
   Future<void> _connectAndPublishOnline() async {
-    // Connect with LWT for this zone
+    // Connect with LWT for this app instance (App Status)
     await _mqttService.connect(
       willTopic: 'irrigation/status/${widget.zoneId}',
       willMessage: 'offline',
     );
-    _mqttService.publish('irrigation/status/${widget.zoneId}', 'online');
+    // Publish App Online Status
+    _mqttService.publish(
+      'irrigation/status/${widget.zoneId}',
+      'online',
+      retain: true,
+    );
+
+    // Subscribe to Device topics
     _mqttService.subscribe('irrigation/sensor/zone/${widget.zoneId}');
+    _mqttService.subscribe('irrigation/status/zone/${widget.zoneId}');
 
     _mqttSubscription = _mqttService.updates?.listen((
       List<MqttReceivedMessage<MqttMessage>> c,
@@ -79,11 +136,21 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
         recMess.payload.message,
       );
 
+      if (c[0].topic == 'irrigation/status/zone/${widget.zoneId}') {
+        if (mounted) {
+          setState(() {
+            _isDeviceOffline = pt == 'offline';
+          });
+        }
+      }
+
       if (c[0].topic == 'irrigation/sensor/zone/${widget.zoneId}') {
         try {
           final doc = jsonDecode(pt);
           final humidity = doc['humidity'];
           final pumpStatus = doc['pump'];
+          final flowRate = doc['flowRate'];
+          final volume = doc['volume'];
 
           if (mounted) {
             setState(() {
@@ -91,11 +158,13 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                 _currentHumidity = (humidity as num).toDouble();
               }
               if (pumpStatus != null) {
-                // Update pump status in _currentZone
-                bool isPumpOn = pumpStatus == 'on';
-                if (_currentZone != null) {
-                  _currentZone = _currentZone!.copyWith(pumpStatus: isPumpOn);
-                }
+                _isWatering = pumpStatus == 'on';
+              }
+              if (flowRate != null) {
+                _currentFlowRate = (flowRate as num).toDouble();
+              }
+              if (volume != null) {
+                _currentVolume = (volume as num).toDouble();
               }
             });
           }
@@ -127,28 +196,40 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
           // Utils.debugLog(r.deviceIdentifier);
           _currentZone = r;
           _isLoading = false;
+          // Update target humidity from zone if available
+          if (_currentZone?.thresholdMax != null) {
+            _targetHumidity = _currentZone!.thresholdMax!;
+          }
         });
-        // if (r.deviceIdentifier != null && r.deviceIdentifier!.isNotEmpty) {
-        //   _connectAndSubscribeMQTT();
-        // }
-        // Initialize mode based on data
-        if (_currentZone!.autoMode == true) {
-          _selectedMode = 'Auto';
-        } else {
-          // If not auto, default to Manual for now
-          // We could check if schedules exist to default to Schedule,
-          // but Manual is a safer default.
-          _selectedMode = 'Manual';
-        }
       },
     );
+  }
+
+  void _startWatering() {
+    final Map<String, dynamic> payload = {
+      'pump': 'on',
+      'targetHumidity': _targetHumidity,
+      'time': DateTime.now().toIso8601String(),
+    };
+    _mqttService.publish(
+      'irrigation/control/zone/${widget.zoneId}',
+      jsonEncode(payload),
+    );
+  }
+
+  void _stopWatering() {
+    _mqttService.publish('irrigation/control/zone/${widget.zoneId}', 'off');
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     Utils.debugLog('Disposing ZoneDetailPage - Publishing offline status');
-    _mqttService.publish('irrigation/status/${widget.zoneId}', 'offline');
+    _mqttService.publish(
+      'irrigation/status/${widget.zoneId}',
+      'offline',
+      retain: true,
+    );
     _mqttSubscription?.cancel();
     super.dispose();
   }
@@ -177,13 +258,6 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
           setState(() {
             _currentZone = updatedZone;
             // Sync selected mode with data if externally changed
-            if (_currentZone!.autoMode == true && _selectedMode != 'Auto') {
-              _selectedMode = 'Auto';
-            } else if (_currentZone!.autoMode == false &&
-                _selectedMode == 'Auto') {
-              // Fallback to Manual if Auto turned off externally
-              _selectedMode = 'Manual';
-            }
           });
         }
       },
@@ -215,16 +289,66 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildSensorMonitoringSection(),
-                const SizedBox(height: 16),
-                // _buildWaterUsageSummary(),
-                // const SizedBox(height: 16),
-                // _buildControlPanel(context),
-                _buildControlPanel(context),
-                // const SizedBox(height: 16),
-                // _buildSchedulesSection(),
-                const SizedBox(height: 16),
-                _buildDeleteSection(),
+                if (_isDeviceOffline) ...[
+                  Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.wifi_off,
+                          size: 64,
+                          color: Colors.grey,
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Device is current offline',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            // Navigate to wifi config or add device page
+                            NavigationHelper.push(
+                              '${AppRoutes.moduleZone}${ZoneModuleRoutes.addDevice}',
+                              args: {
+                                'zoneId': _currentZone!.zoneId,
+                                'isConfig': true,
+                              },
+                            );
+                          },
+                          icon: const Icon(Icons.settings, color: Colors.white),
+                          label: const Text(
+                            'Configure WiFi',
+                            style: TextStyle(color: Colors.white),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 24,
+                              vertical: 12,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ] else ...[
+                  _buildSensorMonitoringSection(),
+                  const SizedBox(height: 16),
+                  _buildManualControl(),
+                  const SizedBox(height: 16),
+                  _buildFlowInfoCard(),
+                  const SizedBox(height: 16),
+                  _buildSchedulesSection(),
+                  const SizedBox(height: 16),
+                  _buildHistorySection(),
+                  const SizedBox(height: 16),
+                  _buildDeleteSection(),
+                ],
               ],
             ),
           ),
@@ -271,31 +395,6 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
       foregroundColor: Colors.white,
       elevation: 0,
       actions: [
-        // Status Indicator
-        Container(
-          margin: const EdgeInsets.only(right: 16),
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.wifi,
-                size: 14,
-                color: _currentZone!.deviceIdentifier != null
-                    ? Colors.greenAccent
-                    : Colors.grey,
-              ),
-              const SizedBox(width: 4),
-              Text(
-                _currentZone!.deviceIdentifier != null ? 'Online' : 'Offline',
-                style: const TextStyle(fontSize: 12, color: Colors.white),
-              ),
-            ],
-          ),
-        ),
         IconButton(
           icon: const Icon(Icons.edit),
           onPressed: () => _showEditDialog(context),
@@ -308,29 +407,19 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
     // Determine humidity status
     // Assuming thresholdValue is the lower bound for "Optimal"
     // This logic can be adjusted based on specific requirements
-    String status = 'Optimal';
     Color statusColor = Colors.green;
     // Real-time humidity from MQTT
+
     double currentHumidity = _currentHumidity;
 
     // Logic: Based on user provided table
     if (currentHumidity < 10) {
-      status = 'Very Dry';
       statusColor = Colors.red;
-    } else if (currentHumidity < 20) {
-      status = 'Dry';
+    } else if (currentHumidity < (_currentZone?.thresholdMin ?? 40)) {
       statusColor = Colors.orange;
-    } else if (currentHumidity < 40) {
-      status = 'Optimal';
+    } else if (currentHumidity <= (_currentZone?.thresholdMax ?? 60)) {
       statusColor = Colors.green;
-    } else if (currentHumidity < 60) {
-      status = 'Moist';
-      statusColor = Colors.blue;
-    } else if (currentHumidity < 80) {
-      status = 'Slightly Waterlogged';
-      statusColor = Colors.indigo;
     } else {
-      status = 'Waterlogged';
       statusColor = Colors.deepPurple;
     }
 
@@ -491,284 +580,145 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
     );
   }
 
-  Widget _buildControlPanel(BuildContext context) {
-    // Determine active mode based on zone state
-    // Default priority: Auto > Schedule > Manual (if pump is on)
-    // Or we can add a 'mode' field to the model if backend supports it.
-    // For now, let's assume we manage it via UI state or derive it.
-
-    // Let's create a local state for the selected mode to show the UI
-    // In a real app, this might be persisted.
-    // However, looking at the user request "lựa chọn 1 trong 3",
-    // it implies we should have a selector.
-
-    // REVISING APPROACH:
-    // Use SegmentedButton (Material 3) for clean look.
-    // Modes: { Manual, Auto, Schedule }
-    // Logic:
-    // - Select Auto: Update zone autoMode = true.
-    // - Select Manual: Update zone autoMode = false. (User can toggle pump)
-    // - Select Schedule: Update zone autoMode = false. (User manages schedules)
-
-    // Note: The backend model 'ZoneModel' currently has 'autoMode' (bool).
-    // It does not have 'scheduleMode'.
-    // If 'Auto' is off, it can be Manual OR Schedule.
-    // We might need to persist this choice locally or infer it?
-    // Or maybe 'weatherMode' was for something else?
-
-    // Let's use a local state variable `_selectedMode` in the State class to track user intention
-    // while on this screen, and sync with `_currentZone.autoMode`.
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Operating Mode',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-        ),
-        const SizedBox(height: 12),
-        Container(
-          width: double.infinity,
-          height: 48,
-          decoration: BoxDecoration(
-            color: Colors.grey[200],
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final width = (constraints.maxWidth - 4) / 3;
-              return Row(
-                children: [
-                  _buildModeButton(
-                    'Manual',
-                    _selectedMode == 'Manual',
-                    width,
-                    onTap: () {
-                      setState(() {
-                        _selectedMode = 'Manual';
-                      });
-                      if (_currentZone!.autoMode == true) {
-                        _bloc.add(
-                          UpdateZoneEvent(
-                            zoneId: _currentZone!.zoneId!,
-                            autoMode: false,
-                          ),
-                        );
-                      }
-                    },
+  Widget _buildFlowInfoCard() {
+    return Card(
+      color: Colors.white,
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Flow Sensor Status',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 16),
+            Row(
+              children: [
+                Expanded(
+                  child: _buildUsageItem(
+                    icon: Icons.speed,
+                    label: 'Flow Rate',
+                    value: '${_currentFlowRate.toStringAsFixed(1)} L/m',
+                    color: Colors.blue,
                   ),
-                  _buildModeButton(
-                    'Auto',
-                    _selectedMode == 'Auto',
-                    width,
-                    onTap: () {
-                      setState(() {
-                        _selectedMode = 'Auto';
-                      });
-                      if (_currentZone!.autoMode != true) {
-                        _bloc.add(
-                          UpdateZoneEvent(
-                            zoneId: _currentZone!.zoneId!,
-                            autoMode: true,
-                          ),
-                        );
-                      }
-                    },
+                ),
+                Container(
+                  width: 1,
+                  height: 40,
+                  color: Colors.grey.withOpacity(0.2),
+                ),
+                Expanded(
+                  child: _buildUsageItem(
+                    icon: Icons.water_drop,
+                    label: 'Total Volume',
+                    value: '${_currentVolume.toStringAsFixed(1)} L',
+                    color: Colors.teal,
                   ),
-                  _buildModeButton(
-                    'Schedule',
-                    _selectedMode == 'Schedule',
-                    width,
-                    onTap: () {
-                      setState(() {
-                        _selectedMode = 'Schedule';
-                      });
-                      if (_currentZone!.autoMode == true) {
-                        _bloc.add(
-                          UpdateZoneEvent(
-                            zoneId: _currentZone!.zoneId!,
-                            autoMode: false,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                ],
-              );
-            },
-          ),
-        ),
-        const SizedBox(height: 24),
-
-        // Conditional Rendering based on Mode
-        if (_selectedMode == 'Manual') _buildManualControl(),
-        if (_selectedMode == 'Auto') _buildAutoSettings(),
-        if (_selectedMode == 'Schedule') _buildSchedulesSection(),
-      ],
-    );
-  }
-
-  Widget _buildModeButton(
-    String label,
-    bool isSelected,
-    double width, {
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: width,
-        height: 40,
-        margin: const EdgeInsets.symmetric(horizontal: 0.5),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        alignment: Alignment.center,
-        child: Text(
-          label,
-          style: TextStyle(
-            color: isSelected ? Colors.white : Colors.black54,
-            fontWeight: FontWeight.w600,
-            fontSize: 14,
-          ),
+                ),
+              ],
+            ),
+          ],
         ),
       ),
     );
   }
 
   Widget _buildManualControl() {
-    bool isPumpRunning = _currentZone!.pumpStatus ?? false;
-
     return Card(
       color: Colors.white,
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: Column(
         children: [
-          ListTile(
-            leading: Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: isPumpRunning
-                    ? Colors.blue.withOpacity(0.1)
-                    : Colors.grey.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.shower,
-                color: isPumpRunning ? Colors.blue : Colors.grey,
-              ),
-            ),
-            title: const Text('Manual Watering'),
-            subtitle: Text(
-              isPumpRunning
-                  ? 'Watering in progress...'
-                  : 'Tap to start watering',
-            ),
-            trailing: Switch(
-              value: isPumpRunning,
-              activeColor: Colors.blue,
-              onChanged: (value) {
-                _bloc.add(
-                  UpdateZoneEvent(
-                    zoneId: _currentZone!.zoneId!,
-                    pumpStatus: value,
-                  ),
-                );
-              },
-            ),
+          16.verticalSpace,
+          Icon(
+            _isWatering ? Icons.water_drop : Icons.water_drop_outlined,
+            size: 64,
+            color: _isWatering ? Colors.blue : Colors.grey,
           ),
-          if (!isPumpRunning) ...[
-            const Divider(),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Timer (Minutes)'),
-                      Text(
-                        '${_manualWateringDuration.toInt()} min',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Slider(
-                    value: _manualWateringDuration,
-                    min: 1,
-                    max: 60,
-                    divisions: 59,
-                    activeColor: Colors.blue,
-                    label: '${_manualWateringDuration.toInt()} min',
-                    onChanged: (value) {
-                      setState(() {
-                        _manualWateringDuration = value;
-                      });
-                    },
-                  ),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: () {
-                        _bloc.add(
-                          UpdateZoneEvent(
-                            zoneId: _currentZone!.zoneId!,
-                            pumpStatus: true,
-                          ),
-                        );
-                      },
-                      icon: const Icon(Icons.timer_outlined),
-                      label: const Text('Start Timer'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+          8.verticalSpace,
+          const Divider(),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Target Humidity (%)'),
+                    Text(
+                      '${_targetHumidity.toInt()}%',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
-    );
-  }
+                  ],
+                ),
+                Builder(
+                  builder: (context) {
+                    double minVal = _currentHumidity;
+                    if (minVal < 0) minVal = 0;
+                    if (minVal > 100) minVal = 100;
 
-  Widget _buildAutoSettings() {
-    return Card(
-      color: Colors.white,
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          children: [
-            const Icon(Icons.settings_suggest, color: Colors.green, size: 48),
-            const SizedBox(height: 12),
-            const Text(
-              'Auto Mode Enabled',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    double sliderVal = _targetHumidity;
+                    if (sliderVal < minVal) sliderVal = minVal;
+                    if (sliderVal > 100) sliderVal = 100;
+
+                    int divisions = (100 - minVal).floor();
+                    if (divisions <= 0) divisions = 1;
+
+                    return Slider(
+                      value: sliderVal,
+                      min: minVal,
+                      max: 100,
+                      divisions: divisions,
+                      activeColor: Colors.blue,
+                      label: '${sliderVal.toInt()}%',
+                      onChanged: _isWatering
+                          ? null
+                          : (value) {
+                              setState(() {
+                                _targetHumidity = value;
+                              });
+                            },
+                    );
+                  },
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () {
+                      // _bloc.add(
+                      //   UpdateZoneEvent(
+                      //     zoneId: _currentZone!.zoneId!,
+                      //     pumpStatus: true,
+                      //     thresholdMax: _targetHumidity,
+                      //   ),
+                      // );
+                      _isWatering ? _stopWatering() : _startWatering();
+                    },
+
+                    // icon: const Icon(Icons.water_drop),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: Text(
+                      _isWatering ? 'Stop Watering' : 'Start Watering',
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 8),
-            const Text(
-              'The system will automatically water when soil moisture drops below the minimum threshold.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton(
-              onPressed: () => _showEditDialog(context),
-              child: const Text('Adjust Thresholds'),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -848,6 +798,107 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
     );
   }
 
+  Widget _buildHistorySection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'History',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            TextButton(
+              onPressed: () {
+                NavigationHelper.push(
+                  '${AppRoutes.moduleZone}${ZoneModuleRoutes.history}',
+                  args: {'zoneId': _currentZone!.zoneId},
+                );
+              },
+              child: const Text('View All'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_isLoadingLogs)
+          const Center(child: CircularProgressIndicator())
+        else if (_logError.isNotEmpty)
+          Text('Error loading history: $_logError')
+        else if (_logs.isEmpty)
+          const Text('No history found')
+        else
+          Column(
+            children: _logs
+                .take(3)
+                .map((log) => _buildHistoryItem(log))
+                .toList(),
+          ),
+      ],
+    );
+  }
+
+  Widget _buildHistoryItem(WaterLogModel log) {
+    return Card(
+      color: Colors.white,
+      elevation: 1,
+      margin: const EdgeInsets.only(bottom: 10),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        child: Row(
+          children: [
+            Expanded(
+              child: Row(
+                children: [
+                  Text(
+                    log.startedAt != null
+                        ? DateFormat('HH:mm dd/MM/yyyy').format(log.startedAt!)
+                        : 'N/A',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.water_drop, size: 12, color: Colors.blue),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${(log.waterVolumeLiters ?? 0).toStringAsFixed(1)} L',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    const Icon(Icons.timer, size: 12, color: Colors.orange),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${log.durationSeconds ?? 0} s',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildDeleteSection() {
     return SizedBox(
       width: double.infinity,
@@ -916,6 +967,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
     final maxThresholdController = TextEditingController(
       text: (_currentZone!.thresholdMax ?? 100).round().toString(),
     );
+    bool currentAutoMode = _currentZone!.autoMode ?? false;
 
     showDialog(
       context: context,
@@ -927,6 +979,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
               // Added scroll view
               child: Column(
                 mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   TextField(
                     controller: nameController,
@@ -938,9 +991,10 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                     decoration: const InputDecoration(labelText: 'Description'),
                   ),
                   const SizedBox(height: 12),
+
                   const SizedBox(height: 12),
                   Text(
-                    'Threshold Range: ${currentRangeValues.start.round()}% - ${currentRangeValues.end.round()}%',
+                    'Threshold Range:',
                     style: const TextStyle(fontWeight: FontWeight.bold),
                   ),
                   RangeSlider(
@@ -967,6 +1021,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                     },
                   ),
                   Row(
+                    mainAxisSize: MainAxisSize.max,
                     children: [
                       Expanded(
                         child: TextField(
@@ -1017,6 +1072,16 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                       ),
                     ],
                   ),
+                  SwitchListTile(
+                    title: const Text('Auto Mode'),
+                    value: currentAutoMode,
+                    onChanged: (val) {
+                      setState(() {
+                        currentAutoMode = val;
+                      });
+                    },
+                    activeColor: AppColors.primary,
+                  ),
                 ],
               ),
             );
@@ -1039,6 +1104,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                   description: descController.text,
                   thresholdMin: thresholdMin,
                   thresholdMax: thresholdMax,
+                  autoMode: currentAutoMode,
                 ),
               );
               Navigator.pop(context);

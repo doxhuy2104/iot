@@ -5,6 +5,7 @@ import 'package:app/modules/zone/presentation/bloc/zone_bloc.dart';
 import 'package:app/modules/zone/presentation/pages/add_device_page.dart';
 import 'package:app/modules/zone/presentation/pages/create_schedule_page.dart';
 import 'package:app/modules/zone/presentation/pages/create_zone_page.dart';
+import 'package:app/modules/zone/presentation/pages/history_page.dart';
 import 'package:app/modules/zone/presentation/pages/schedule_list_page.dart';
 import 'package:app/modules/zone/presentation/pages/zone_detail_page.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -30,7 +31,7 @@ class ZoneModule extends Module {
       ZoneModuleRoutes.addDevice,
       child: (context) => AddDevicePage(
         zoneId: r.args.data['zoneId'],
-        threshold: r.args.data['threshold'],
+        isConfig: r.args.data['isConfig'] ?? false,
       ),
     );
     r.child(ZoneModuleRoutes.createZone, child: (context) => CreateZonePage());
@@ -44,6 +45,10 @@ class ZoneModule extends Module {
         zoneId: r.args.data['zoneId'],
         schedule: r.args.data['schedule'],
       ),
+    );
+    r.child(
+      ZoneModuleRoutes.history,
+      child: (context) => HistoryPage(zoneId: r.args.data['zoneId']),
     );
   }
 }

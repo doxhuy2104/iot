@@ -9,8 +9,6 @@ import 'package:app/core/utils/utils.dart';
 import 'package:app/l10n/app_localizations.dart';
 import 'package:app/modules/app/general/app_module_routes.dart';
 import 'package:app/modules/auth/general/auth_module_routes.dart';
-import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
-import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -47,13 +45,15 @@ class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
         Globals.globalRefreshToken = refreshToken.toString();
       }
       Utils.debugLog('AccessToken found: $accessToken');
+      Utils.debugLog('RefreshToken found: ${refreshToken != null}');
 
       if (JwtDecoder.isExpired(accessToken.toString())) {
-        Utils.debugLogSuccess('Access token is expired');
-        if (refreshToken != null) {
-          final authBloc = Modular.get<AuthBloc>();
-          authBloc.add(RefreshTokenRequested(refreshToken.toString()));
-        } else {
+        Utils.debugLogError('Access token is expired');
+        // Let DioInterceptor handle the refresh on first API call failure (401/403)
+        // to avoid race condition where both MainWidget and DioInterceptor try to refresh
+        // leading to one of them failing due to Refresh Token Rotation.
+
+        if (refreshToken == null) {
           Modular.setInitialRoute(
             '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
           );

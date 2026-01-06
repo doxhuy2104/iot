@@ -71,3 +71,15 @@ class GetZoneDetail extends ZoneEvent {
   final int zoneId;
   const GetZoneDetail({required this.zoneId});
 }
+
+class ControlZoneEvent extends ZoneEvent {
+  final int zoneId;
+  final String pump;
+  final int targetHumidity;
+
+  const ControlZoneEvent({
+    required this.zoneId,
+    required this.pump,
+    required this.targetHumidity,
+  });
+}

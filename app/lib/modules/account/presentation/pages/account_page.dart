@@ -32,8 +32,8 @@ class AccountPage extends StatelessWidget {
             child: Column(
               children: [
                 _buildProfileHeader(user),
-                const SizedBox(height: 30),
-                _buildMenuSection(),
+                // const SizedBox(height: 30),
+                // _buildMenuSection(),
                 const SizedBox(height: 30),
                 _buildLogoutButton(context),
               ],
@@ -100,48 +100,48 @@ class AccountPage extends StatelessWidget {
     );
   }
 
-  Widget _buildMenuSection() {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        children: [
-          _buildMenuItem(
-            icon: Icons.person_outline,
-            title: 'Edit Profile',
-            onTap: () {
-              // Navigate to Edit Profile
-            },
-          ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          _buildMenuItem(
-            icon: Icons.lock_outline,
-            title: 'Change Password',
-            onTap: () {
-              // Navigate to Change Password
-            },
-          ),
-          const Divider(height: 1, indent: 16, endIndent: 16),
-          _buildMenuItem(
-            icon: Icons.info_outline,
-            title: 'About',
-            onTap: () {
-              // Navigate to About
-            },
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildMenuSection() {
+  //   return Container(
+  //     decoration: BoxDecoration(
+  //       color: Colors.white,
+  //       borderRadius: BorderRadius.circular(16),
+  //       boxShadow: [
+  //         BoxShadow(
+  //           color: Colors.black.withOpacity(0.05),
+  //           blurRadius: 10,
+  //           offset: const Offset(0, 4),
+  //         ),
+  //       ],
+  //     ),
+  //     child: Column(
+  //       children: [
+  //         _buildMenuItem(
+  //           icon: Icons.person_outline,
+  //           title: 'Edit Profile',
+  //           onTap: () {
+  //             // Navigate to Edit Profile
+  //           },
+  //         ),
+  //         const Divider(height: 1, indent: 16, endIndent: 16),
+  //         _buildMenuItem(
+  //           icon: Icons.lock_outline,
+  //           title: 'Change Password',
+  //           onTap: () {
+  //             // Navigate to Change Password
+  //           },
+  //         ),
+  //         const Divider(height: 1, indent: 16, endIndent: 16),
+  //         _buildMenuItem(
+  //           icon: Icons.info_outline,
+  //           title: 'About',
+  //           onTap: () {
+  //             // Navigate to About
+  //           },
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   Widget _buildMenuItem({
     required IconData icon,
@@ -179,10 +179,10 @@ class AccountPage extends StatelessWidget {
       child: Button(
         onPress: () {
           AppDialog.show(
-            title: 'Xác nhận đăng xuất',
-            cancelText: 'Huỷ',
-            confirmText: 'Xác nhận',
-            message: 'Bạn có chắc muốn đăng xuất',
+            title: 'Confirm signout',
+            cancelText: 'Cancel',
+            confirmText: 'Confirm',
+            message: 'Are you sure you want to sign out?',
             dismissible: false,
             onConfirm: () {
               Modular.get<AuthBloc>().add(SignOutRequest());
@@ -202,7 +202,7 @@ class AccountPage extends StatelessWidget {
               Icon(Icons.logout_outlined, color: AppColors.danger, size: 20),
               SizedBox(width: 8),
               Text(
-                'Đăng xuất',
+                'Sign out',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,

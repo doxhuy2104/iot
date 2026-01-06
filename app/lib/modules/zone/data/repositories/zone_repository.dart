@@ -1,3 +1,4 @@
+import 'package:app/core/models/water_log_model.dart';
 import 'package:app/core/models/zone_model.dart';
 import 'package:app/core/network/dio_exceptions.dart';
 import 'package:app/core/network/dio_failure.dart';
@@ -190,6 +191,46 @@ class ZoneRepository {
           : responseData;
 
       return Right(ZoneModel.fromJson(mapData)!);
+    } on DioException catch (e) {
+      final reason = DioExceptions.fromDioError(e).toString();
+      final statusCode = e.response?.statusCode.toString() ?? '';
+      return Left(ApiFailure(reason: reason, statusCode: statusCode));
+    } catch (e) {
+      return Left(ApiFailure(reason: e.toString(), statusCode: '400'));
+    }
+  }
+
+  Future<Either<DioFailure, dynamic>> startWatering({
+    required int zoneId,
+    required String pump,
+    required int targetHumidity,
+  }) async {
+    try {
+      final response = await api.startWatering(zoneId, pump, targetHumidity);
+      return Right(response.data);
+    } on DioException catch (e) {
+      final reason = DioExceptions.fromDioError(e).toString();
+      final statusCode = e.response?.statusCode.toString() ?? '';
+      return Left(ApiFailure(reason: reason, statusCode: statusCode));
+    } catch (e) {
+      return Left(ApiFailure(reason: e.toString(), statusCode: '400'));
+    }
+  }
+
+  Future<Either<DioFailure, List<WaterLogModel>>> getWaterLogs(
+    int zoneId,
+  ) async {
+    try {
+      final response = await api.getWaterLogs(zoneId);
+      final responseData = response.data;
+      final listData = responseData is Map<String, dynamic>
+          ? (responseData['data'] as List)
+          : responseData as List;
+
+      final logs = List<WaterLogModel>.from(
+        listData.map((e) => WaterLogModel.fromJson(e)),
+      );
+      return Right(logs);
     } on DioException catch (e) {
       final reason = DioExceptions.fromDioError(e).toString();
       final statusCode = e.response?.statusCode.toString() ?? '';

@@ -105,15 +105,17 @@ class WaterLogModel extends Equatable {
     final int? id = mapData['log_id'] ?? mapData['id'];
     final int? zoneId = mapData['zone_id'] ?? mapData['zoneId'];
     final int? deviceId = mapData['device_id'] ?? mapData['deviceId'];
-    final DateTime? startedAt = mapData['started_at'] != null
-        ? (mapData['started_at'] is DateTime
-              ? mapData['started_at']
-              : DateTime.tryParse(mapData['started_at'].toString()))
+    final dynamic startedAtRaw = mapData['started_at'] ?? mapData['startedAt'];
+    final DateTime? startedAt = startedAtRaw != null
+        ? (startedAtRaw is DateTime
+              ? startedAtRaw
+              : DateTime.tryParse(startedAtRaw.toString()))
         : null;
-    final DateTime? endedAt = mapData['ended_at'] != null
-        ? (mapData['ended_at'] is DateTime
-              ? mapData['ended_at']
-              : DateTime.tryParse(mapData['ended_at'].toString()))
+    final dynamic endedAtRaw = mapData['ended_at'] ?? mapData['endedAt'];
+    final DateTime? endedAt = endedAtRaw != null
+        ? (endedAtRaw is DateTime
+              ? endedAtRaw
+              : DateTime.tryParse(endedAtRaw.toString()))
         : null;
     final int? durationSeconds =
         mapData['duration_seconds'] ??
@@ -128,10 +130,11 @@ class WaterLogModel extends Equatable {
     final WaterLogStatus? status = WaterLogStatus.fromString(
       mapData['status'] ?? mapData['water_status'],
     );
-    final DateTime? createdAt = mapData['created_at'] != null
-        ? (mapData['created_at'] is DateTime
-              ? mapData['created_at']
-              : DateTime.tryParse(mapData['created_at'].toString()))
+    final dynamic createdAtRaw = mapData['created_at'] ?? mapData['createdAt'];
+    final DateTime? createdAt = createdAtRaw != null
+        ? (createdAtRaw is DateTime
+              ? createdAtRaw
+              : DateTime.tryParse(createdAtRaw.toString()))
         : null;
 
     return WaterLogModel(

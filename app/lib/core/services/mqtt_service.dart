@@ -110,13 +110,18 @@ class MqttService {
     }
   }
 
-  void publish(String topic, String message) {
+  void publish(String topic, String message, {bool retain = false}) {
     if (client != null &&
         client!.connectionStatus!.state == MqttConnectionState.connected) {
       final builder = MqttClientPayloadBuilder();
       builder.addString(message);
-      client!.publishMessage(topic, MqttQos.atMostOnce, builder.payload!);
-      Utils.debugLog('Published "$message" to $topic');
+      client!.publishMessage(
+        topic,
+        MqttQos.atMostOnce,
+        builder.payload!,
+        retain: retain,
+      );
+      Utils.debugLog('Published "$message" to $topic (retain: $retain)');
     } else {
       Utils.debugLog('MQTT Client not connected, cannot publish.');
     }

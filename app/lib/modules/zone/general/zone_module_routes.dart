@@ -6,4 +6,5 @@ class ZoneModuleRoutes {
   static const String createZone = '/create-zone';
   static const String schedules = '/schedules';
   static const String createSchedule = '/create-schedule';
+  static const String history = '/history';
 }

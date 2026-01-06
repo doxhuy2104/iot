@@ -177,7 +177,7 @@ class DioInterceptor extends Interceptor {
       Utils.debugLogError('Log error: $e');
     }
 
-    if (err.response?.data?['type'] == 'DIALOG') {
+    if (err.response?.data is Map && err.response?.data['type'] == 'DIALOG') {
       final json = err.response?.data;
 
       // AppDialog.showFromJson(json);
@@ -200,15 +200,22 @@ class DioInterceptor extends Interceptor {
     }
 
     // check if 401 or 403, remove token and navigate to login
-    if (err.response?.statusCode == 401) {
+    if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
+      Utils.debugLog('DioInterceptor: Caught ${err.response?.statusCode}');
       if (err.requestOptions.path.contains('/auth/refresh-token')) {
+        Utils.debugLogError('DioInterceptor: Refresh token failed (in loop)');
         _handleExpiredSession();
         return handler.reject(err);
       }
 
       final refreshToken = Globals.globalRefreshToken;
+      Utils.debugLog(
+        'DioInterceptor: refreshToken available: ${refreshToken != null}',
+      );
+
       if (refreshToken != null) {
         try {
+          Utils.debugLog('DioInterceptor: Attempting to refresh token...');
           final response = await dio.post(
             '/api/auth/refresh-token',
             data: {'refreshToken': refreshToken},

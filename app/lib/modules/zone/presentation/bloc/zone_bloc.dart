@@ -79,7 +79,6 @@ class ZoneBloc extends HydratedBloc<ZoneEvent, ZoneState> {
           thresholdMax: event.thresholdMax ?? currentZone.thresholdMax,
           autoMode: event.autoMode ?? currentZone.autoMode,
           weatherMode: event.weatherMode ?? currentZone.weatherMode,
-          pumpStatus: event.pumpStatus ?? currentZone.pumpStatus,
         );
         result.fold(
           (failure) {
@@ -135,6 +134,23 @@ class ZoneBloc extends HydratedBloc<ZoneEvent, ZoneState> {
               currentZones.add(zone);
               emit(state.setState(zones: currentZones));
             }
+          },
+        );
+      } else if (event is ControlZoneEvent) {
+        final result = await repository.startWatering(
+          zoneId: event.zoneId,
+          pump: event.pump,
+          targetHumidity: event.targetHumidity,
+        );
+        result.fold(
+          (failure) {
+            Utils.debugLog(failure.reason);
+            Utils.showToast(failure.reason);
+          },
+          (success) {
+            Utils.showToast(
+              event.pump == 'on' ? 'Started watering' : 'Stopped watering',
+            );
           },
         );
       }
