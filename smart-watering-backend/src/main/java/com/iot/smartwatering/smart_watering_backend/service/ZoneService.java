@@ -81,6 +81,7 @@ public class ZoneService {
                 .build();
 
         zone = zoneRepository.save(zone);
+        publishZoneConfig(zone);
         return mapToResponse(zone);
     }
 
@@ -126,6 +127,7 @@ public class ZoneService {
         }
 
         zone = zoneRepository.save(zone);
+        publishZoneConfig(zone);
         return mapToResponse(zone);
     }
 
@@ -135,6 +137,19 @@ public class ZoneService {
             throw new RuntimeException("Zone not found");
         }
         zoneRepository.deleteById(zoneId);
+    }
+
+    private void publishZoneConfig(Zone zone) {
+        java.util.Map<String, Object> config = new java.util.HashMap<>();
+        config.put("thresholdMin", zone.getThresholdMin());
+        config.put("thresholdMax", zone.getThresholdMax());
+        config.put("autoMode", zone.getAutoMode());
+        config.put("weatherMode", zone.getWeatherMode());
+        if (zone.getUser() != null) {
+            config.put("userId", zone.getUser().getUserId());
+        }
+
+        mqttService.publishConfigUpdate(zone.getZoneId(), config);
     }
 
     private ZoneResponse mapToResponse(Zone zone) {
