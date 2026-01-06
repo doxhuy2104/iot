@@ -229,21 +229,38 @@ public class MqttMessageHandler {
 
     private void handleWaterLog(String topic, String payload) {
         try {
+            log.info("Processing water log message - Topic: {}", topic);
+
             // Topic format: irrigation/log/zone/{zoneId}
-            Long zoneId = Long.parseLong(topic.substring(topic.lastIndexOf('/') + 1));
+            String[] parts = topic.split("/");
+            if (parts.length < 4) { // irrigation, log, zone, {id}
+                log.warn("Invalid topic format: {}", topic);
+                return;
+            }
+
+            String zoneIdStr = parts[parts.length - 1];
+            Long zoneId;
+            try {
+                zoneId = Long.parseLong(zoneIdStr);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid zone ID in topic: {}", zoneIdStr);
+                return;
+            }
 
             @SuppressWarnings("unchecked")
             Map<String, Object> data = objectMapper.readValue(payload, Map.class);
 
-            Zone zone = zoneRepository.findById(zoneId)
-                    .orElseThrow(() -> new RuntimeException("Zone not found: " + zoneId));
+            Zone zone = zoneRepository.findById(zoneId).orElse(null);
+            if (zone == null) {
+                log.warn("Zone not found for ID: {}. Cannot create water log.", zoneId);
+                return;
+            }
 
             LocalDateTime startedAt = LocalDateTime.now();
             if (data.containsKey("startedAt") && data.get("startedAt") != null) {
                 String startedAtStr = (String) data.get("startedAt");
                 if (!startedAtStr.isEmpty()) {
                     try {
-                        // Attempt to parse ISO_LOCAL_DATE_TIME
                         startedAt = LocalDateTime.parse(startedAtStr);
                     } catch (Exception e) {
                         log.warn("Failed to parse startedAt: {}. Using current time.", startedAtStr);
@@ -251,33 +268,34 @@ public class MqttMessageHandler {
                 }
             }
 
-            Integer durationSeconds = data.containsKey("durationSeconds")
-                    ? ((Number) data.get("durationSeconds")).intValue()
-                    : 0;
+            Integer durationSeconds = 0;
+            if (data.containsKey("durationSeconds") && data.get("durationSeconds") instanceof Number) {
+                durationSeconds = ((Number) data.get("durationSeconds")).intValue();
+            }
 
-            Double volume = data.containsKey("volume")
-                    ? ((Number) data.get("volume")).doubleValue()
-                    : 0.0;
+            Double volume = 0.0;
+            if (data.containsKey("volume") && data.get("volume") instanceof Number) {
+                volume = ((Number) data.get("volume")).doubleValue();
+            }
 
             LocalDateTime endedAt = startedAt.plusSeconds(durationSeconds);
 
             WaterLog waterLog = WaterLog.builder()
                     .zone(zone)
-                    // Device is unknown from this payload, leaving null
                     .startedAt(startedAt)
                     .endedAt(endedAt)
                     .durationSeconds(durationSeconds)
                     .volume(volume)
-                    .reason(WaterLog.WaterReason.MANUAL) // Defaulting to MANUAL
+                    .reason(WaterLog.WaterReason.MANUAL)
                     .status(WaterLog.WaterStatus.COMPLETED)
                     .createdAt(LocalDateTime.now())
                     .build();
 
-            waterLogRepository.save(waterLog);
-            log.info("Saved water log for zone: {}", zoneId);
+            WaterLog savedLog = waterLogRepository.save(waterLog);
+            log.info("Successfully saved water log (ID: {}) for zone: {}", savedLog.getLogId(), zoneId);
 
         } catch (Exception e) {
-            log.error("Error handling water log", e);
+            log.error("Error handling water log for topic: " + topic, e);
         }
     }
 }
