@@ -34,6 +34,8 @@ public class MqttMessageHandler {
     private final DeviceRepository deviceRepository;
     private final ZoneRepository zoneRepository;
     private final AlertRepository alertRepository;
+    private final NotificationService notificationService;
+    private final EmailService emailService;
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
     @Transactional
@@ -194,14 +196,33 @@ public class MqttMessageHandler {
 
             Alert alert = Alert.builder()
                     .zone(zone)
+                    .device(sensorData.getDevice())
                     .severity(Alert.AlertSeverity.WARNING)
                     .message(String.format(
                             "Độ ẩm đất thấp (%,.1f%%) dưới ngưỡng minimum (%,.1f%%)",
                             sensorData.getSoilMoisture(),
                             zone.getThresholdMin()))
+                    .createdAt(LocalDateTime.now())
                     .build();
 
             alertRepository.save(alert);
+            log.info("Created alert for low moisture in zone: {}", zone.getZoneId());
+
+            // Gửi notification và email cho user sở hữu zone
+            try {
+                User zoneOwner = zone.getUser();
+                if (zoneOwner != null) {
+                    // Tạo notification trong app
+                    notificationService.createNotificationFromAlert(alert, zoneOwner);
+                    log.info("Notification created for user: {}", zoneOwner.getUsername());
+
+                    // Gửi email cảnh báo
+                    emailService.sendLowMoistureAlert(alert, zoneOwner);
+                    log.info("Email alert sent to: {}", zoneOwner.getEmail());
+                }
+            } catch (Exception e) {
+                log.error("Error sending alert notifications for zone: {}", zone.getZoneId(), e);
+            }
         }
     }
 }
