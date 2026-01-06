@@ -36,7 +36,6 @@ public class MqttMessageHandler {
     private final ZoneRepository zoneRepository;
     private final AlertRepository alertRepository;
     private final NotificationService notificationService;
-    private final EmailService emailService;
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
     @Transactional
@@ -216,10 +215,6 @@ public class MqttMessageHandler {
                     // Tạo notification trong app
                     notificationService.createNotificationFromAlert(alert, zoneOwner);
                     log.info("Notification created for user: {}", zoneOwner.getUsername());
-
-                    // Gửi email cảnh báo
-                    emailService.sendLowMoistureAlert(alert, zoneOwner);
-                    log.info("Email alert sent to: {}", zoneOwner.getEmail());
                 }
             } catch (Exception e) {
                 log.error("Error sending alert notifications for zone: {}", zone.getZoneId(), e);
