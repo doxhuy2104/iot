@@ -7,7 +7,6 @@ import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import lombok.RequiredArgsConstructor;
@@ -43,8 +42,8 @@ public class MqttService {
 
             log.info("Published control command to topic: {} - {}", topic, jsonPayload);
 
-        } catch (JsonProcessingException e) {
-            log.error("Error creating JSON payload", e);
+        } catch (Exception e) {
+            log.error("Error sending control command to MQTT", e);
         }
     }
 
@@ -65,8 +64,8 @@ public class MqttService {
 
             log.info("Published config update to topic: {}", topic);
 
-        } catch (JsonProcessingException e) {
-            log.error("Error creating JSON payload", e);
+        } catch (Exception e) {
+            log.error("Error sending config update to MQTT", e);
         }
     }
 }
