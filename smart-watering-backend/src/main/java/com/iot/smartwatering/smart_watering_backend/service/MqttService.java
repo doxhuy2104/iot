@@ -1,15 +1,17 @@
 package com.iot.smartwatering.smart_watering_backend.service;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.integration.support.MessageBuilder;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.stereotype.Service;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -32,8 +34,7 @@ public class MqttService {
             mqttOutboundChannel.send(
                     MessageBuilder.withPayload(jsonPayload)
                             .setHeader("mqtt_topic", topic)
-                            .build()
-            );
+                            .build());
 
             log.info("Published control command to topic: {} - {}", topic, jsonPayload);
 
@@ -54,8 +55,8 @@ public class MqttService {
             mqttOutboundChannel.send(
                     MessageBuilder.withPayload(jsonPayload)
                             .setHeader("mqtt_topic", topic)
-                            .build()
-            );
+                            .setHeader("mqtt_retained", true)
+                            .build());
 
             log.info("Published config update to topic: {}", topic);
 
