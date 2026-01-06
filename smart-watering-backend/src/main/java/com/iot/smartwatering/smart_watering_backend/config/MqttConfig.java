@@ -41,7 +41,16 @@ public class MqttConfig {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
 
-        options.setServerURIs(new String[] { brokerUrl });
+        // Sanitize Broker URL: HiveMQ Cloud (and others) require ssl:// for port 8883
+        String formattedBrokerUrl = brokerUrl;
+        if (brokerUrl != null && brokerUrl.startsWith("tcp://") && brokerUrl.contains(":8883")) {
+            formattedBrokerUrl = brokerUrl.replace("tcp://", "ssl://");
+            System.out
+                    .println("WARNING: Correcting MQTT Broker URL from tcp:// to ssl:// for secure port 8883. New URL: "
+                            + formattedBrokerUrl);
+        }
+
+        options.setServerURIs(new String[] { formattedBrokerUrl });
         options.setCleanSession(true);
         options.setAutomaticReconnect(true);
         options.setConnectionTimeout(10);
