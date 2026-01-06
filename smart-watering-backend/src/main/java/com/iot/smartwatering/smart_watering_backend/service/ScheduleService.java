@@ -94,7 +94,7 @@ public class ScheduleService {
         // Action is String. Maybe we can pass "ON" or a JSON string?
         // The MqttService wraps action in a JSON payload: { "action": action }.
         // So passing "ON" is safe.
-        mqttService.publishControlCommand(zoneId, "ON");
+        mqttService.publishControlCommand(zoneId, "on", null);
 
         // Note: If we need to turn it OFF after duration, we need another mechanism
         // (e.g., Delayed task, or device handles it).

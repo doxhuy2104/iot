@@ -21,12 +21,17 @@ public class MqttService {
     private final MessageChannel mqttOutboundChannel;
     private final ObjectMapper objectMapper;
 
-    public void publishControlCommand(Long zoneId, String action) {
+    public void publishControlCommand(Long zoneId, String pump, Integer targetHumidity) {
         try {
             Map<String, Object> payload = new HashMap<>();
-            payload.put("zoneId", zoneId);
-            payload.put("action", action);
-            payload.put("timestamp", System.currentTimeMillis());
+            if (pump != null) {
+                payload.put("pump", pump.toLowerCase());
+            }
+            if (targetHumidity != null) {
+                payload.put("targetHumidity", targetHumidity);
+            }
+            // payload.put("timestamp", System.currentTimeMillis()); // Optional, Arduino
+            // ignored it
 
             String jsonPayload = objectMapper.writeValueAsString(payload);
             String topic = "irrigation/control/zone/" + zoneId;
