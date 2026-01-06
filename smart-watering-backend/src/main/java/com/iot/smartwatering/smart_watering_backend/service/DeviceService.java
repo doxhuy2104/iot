@@ -1,5 +1,12 @@
 package com.iot.smartwatering.smart_watering_backend.service;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.iot.smartwatering.smart_watering_backend.dto.request.DeviceRequest;
 import com.iot.smartwatering.smart_watering_backend.dto.response.DeviceResponse;
 import com.iot.smartwatering.smart_watering_backend.entity.Device;
@@ -7,14 +14,9 @@ import com.iot.smartwatering.smart_watering_backend.entity.Zone;
 import com.iot.smartwatering.smart_watering_backend.exception.ResourceNotFoundException;
 import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -85,7 +87,8 @@ public class DeviceService {
 
         // Check if identifier already exists
         if (deviceRepository.findByIdentifier(request.getIdentifier()).isPresent()) {
-            throw new IllegalArgumentException("Device with identifier '" + request.getIdentifier() + "' already exists");
+            throw new IllegalArgumentException(
+                    "Device with identifier '" + request.getIdentifier() + "' already exists");
         }
 
         // Parse device type
@@ -130,7 +133,8 @@ public class DeviceService {
         // Check if identifier is being changed and if it already exists
         if (!device.getIdentifier().equals(request.getIdentifier())) {
             if (deviceRepository.findByIdentifier(request.getIdentifier()).isPresent()) {
-                throw new IllegalArgumentException("Device with identifier '" + request.getIdentifier() + "' already exists");
+                throw new IllegalArgumentException(
+                        "Device with identifier '" + request.getIdentifier() + "' already exists");
             }
             device.setIdentifier(request.getIdentifier());
         }
@@ -186,7 +190,7 @@ public class DeviceService {
 
     private DeviceResponse convertToResponse(Device device) {
         return DeviceResponse.builder()
-                .deviceId(device.getDeviceId().longValue())
+                .deviceId(device.getDeviceId())
                 .deviceName(device.getDeviceName())
                 .type(device.getType().name())
                 .identifier(device.getIdentifier())

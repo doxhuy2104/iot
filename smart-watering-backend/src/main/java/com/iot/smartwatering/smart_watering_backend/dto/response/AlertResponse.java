@@ -1,12 +1,13 @@
 package com.iot.smartwatering.smart_watering_backend.dto.response;
 
+import java.time.LocalDateTime;
+
 import com.iot.smartwatering.smart_watering_backend.entity.Alert;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -16,7 +17,7 @@ public class AlertResponse {
     private Long alertId;
     private Long zoneId;
     private String zoneName;
-    private Long deviceId;
+    private Integer deviceId;
     private String deviceName;
     private Alert.AlertSeverity severity;
     private String message;

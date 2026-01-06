@@ -14,11 +14,13 @@ import com.iot.smartwatering.smart_watering_backend.entity.Device;
 import com.iot.smartwatering.smart_watering_backend.entity.FlowData;
 import com.iot.smartwatering.smart_watering_backend.entity.SensorData;
 import com.iot.smartwatering.smart_watering_backend.entity.User;
+import com.iot.smartwatering.smart_watering_backend.entity.WaterLog;
 import com.iot.smartwatering.smart_watering_backend.entity.Zone;
 import com.iot.smartwatering.smart_watering_backend.repository.AlertRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.FlowDataRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.SensorDataRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.WaterLogRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -35,6 +37,7 @@ public class MqttMessageHandler {
     private final DeviceRepository deviceRepository;
     private final ZoneRepository zoneRepository;
     private final AlertRepository alertRepository;
+    private final WaterLogRepository waterLogRepository;
     private final NotificationService notificationService;
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
@@ -54,6 +57,8 @@ public class MqttMessageHandler {
                 handleDeviceStatus(topic, payload);
             } else if (topic.contains("alert")) {
                 handleAlert(topic, payload);
+            } else if (topic.contains("log")) {
+                handleWaterLog(topic, payload);
             }
 
         } catch (Exception e) {
@@ -219,6 +224,60 @@ public class MqttMessageHandler {
             } catch (Exception e) {
                 log.error("Error sending alert notifications for zone: {}", zone.getZoneId(), e);
             }
+        }
+    }
+
+    private void handleWaterLog(String topic, String payload) {
+        try {
+            // Topic format: irrigation/log/zone/{zoneId}
+            Long zoneId = Long.parseLong(topic.substring(topic.lastIndexOf('/') + 1));
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = objectMapper.readValue(payload, Map.class);
+
+            Zone zone = zoneRepository.findById(zoneId)
+                    .orElseThrow(() -> new RuntimeException("Zone not found: " + zoneId));
+
+            LocalDateTime startedAt = LocalDateTime.now();
+            if (data.containsKey("startedAt") && data.get("startedAt") != null) {
+                String startedAtStr = (String) data.get("startedAt");
+                if (!startedAtStr.isEmpty()) {
+                    try {
+                        // Attempt to parse ISO_LOCAL_DATE_TIME
+                        startedAt = LocalDateTime.parse(startedAtStr);
+                    } catch (Exception e) {
+                        log.warn("Failed to parse startedAt: {}. Using current time.", startedAtStr);
+                    }
+                }
+            }
+
+            Integer durationSeconds = data.containsKey("durationSeconds")
+                    ? ((Number) data.get("durationSeconds")).intValue()
+                    : 0;
+
+            Double volume = data.containsKey("volume")
+                    ? ((Number) data.get("volume")).doubleValue()
+                    : 0.0;
+
+            LocalDateTime endedAt = startedAt.plusSeconds(durationSeconds);
+
+            WaterLog waterLog = WaterLog.builder()
+                    .zone(zone)
+                    // Device is unknown from this payload, leaving null
+                    .startedAt(startedAt)
+                    .endedAt(endedAt)
+                    .durationSeconds(durationSeconds)
+                    .volume(volume)
+                    .reason(WaterLog.WaterReason.MANUAL) // Defaulting to MANUAL
+                    .status(WaterLog.WaterStatus.COMPLETED)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            waterLogRepository.save(waterLog);
+            log.info("Saved water log for zone: {}", zoneId);
+
+        } catch (Exception e) {
+            log.error("Error handling water log", e);
         }
     }
 }

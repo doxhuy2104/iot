@@ -41,7 +41,7 @@ public class MqttConfig {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
 
-        options.setServerURIs(new String[]{brokerUrl});
+        options.setServerURIs(new String[] { brokerUrl });
         options.setCleanSession(true);
         options.setAutomaticReconnect(true);
         options.setConnectionTimeout(10);
@@ -71,11 +71,10 @@ public class MqttConfig {
     // Inbound adapter for receiving messages
     @Bean
     public MessageProducer inbound() {
-        String[] topics = {sensorTopic, statusTopic};
+        String[] topics = { sensorTopic, statusTopic, "irrigation/log/zone/#" };
 
-        MqttPahoMessageDrivenChannelAdapter adapter =
-                new MqttPahoMessageDrivenChannelAdapter(
-                        clientId + "-inbound", mqttClientFactory(), topics);
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
+                clientId + "-inbound", mqttClientFactory(), topics);
 
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
@@ -89,8 +88,7 @@ public class MqttConfig {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {
-        MqttPahoMessageHandler messageHandler =
-                new MqttPahoMessageHandler(clientId + "-outbound", mqttClientFactory());
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientId + "-outbound", mqttClientFactory());
 
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic("irrigation/control");

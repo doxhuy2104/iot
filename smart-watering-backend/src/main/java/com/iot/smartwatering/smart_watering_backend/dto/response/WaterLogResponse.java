@@ -1,28 +1,23 @@
 package com.iot.smartwatering.smart_watering_backend.dto.response;
 
-import com.iot.smartwatering.smart_watering_backend.entity.WaterLog;
-import lombok.AllArgsConstructor;
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
-@NoArgsConstructor
-@AllArgsConstructor
 public class WaterLogResponse {
     private Long logId;
     private Long zoneId;
     private String zoneName;
-    private Long deviceId;
-    private String deviceName;
     private LocalDateTime startedAt;
     private LocalDateTime endedAt;
     private Integer durationSeconds;
-    private Double waterVolumeLiters;
-    private WaterLog.WaterReason reason;
-    private WaterLog.WaterStatus status;
+    private Double volume;
+    private String reason;
+    private String status;
+    private Integer deviceId;
+    private String deviceName;
     private LocalDateTime createdAt;
 }

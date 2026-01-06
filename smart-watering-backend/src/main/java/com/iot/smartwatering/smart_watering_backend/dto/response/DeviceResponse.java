@@ -1,14 +1,14 @@
 package com.iot.smartwatering.smart_watering_backend.dto.response;
 
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
 public class DeviceResponse {
-    private Long deviceId;
+    private Integer deviceId;
     private String deviceName;
     private String type;
     private String identifier;

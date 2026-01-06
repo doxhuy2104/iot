@@ -1,11 +1,11 @@
 package com.iot.smartwatering.smart_watering_backend.dto.response;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -15,7 +15,7 @@ public class FlowDataResponse {
     private Long flowId;
     private Long zoneId;
     private String zoneName;
-    private Long deviceId;
+    private Integer deviceId;
     private String deviceName;
     private Long pulseCount;
     private Float flowRatePerMinute;

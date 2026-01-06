@@ -32,7 +32,7 @@ public class Device {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "device_id")
-    private Long deviceId;
+    private Integer deviceId;
     @Column(name = "device_name", nullable = false)
     private String deviceName;
 
