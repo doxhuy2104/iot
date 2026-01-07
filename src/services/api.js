@@ -12,7 +12,6 @@ const fetchApi = async (url, options = {}) => {
   };
 
   const response = await fetch(url, {
-    mode: 'same-origin',
     ...options,
     headers,
   });
