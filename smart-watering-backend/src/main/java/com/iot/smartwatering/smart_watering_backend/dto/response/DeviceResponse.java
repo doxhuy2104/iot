@@ -1,9 +1,9 @@
 package com.iot.smartwatering.smart_watering_backend.dto.response;
 
+import java.time.LocalDateTime;
+
 import lombok.Builder;
 import lombok.Data;
-
-import java.time.LocalDateTime;
 
 @Data
 @Builder
@@ -13,7 +13,7 @@ public class DeviceResponse {
     private String type;
     private String identifier;
     private String status;
-    private Integer zoneId;
+    private Long zoneId;
     private String zoneName;
     private LocalDateTime createdAt;
 }

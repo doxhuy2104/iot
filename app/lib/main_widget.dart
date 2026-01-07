@@ -1,0 +1,165 @@
+import 'package:app/core/constants/app_keys.dart';
+import 'package:app/core/constants/app_routes.dart';
+import 'package:app/core/constants/app_stores.dart';
+import 'package:app/core/constants/app_theme.dart';
+import 'package:app/core/helpers/general_helper.dart';
+import 'package:app/core/helpers/shared_preference_helper.dart';
+import 'package:app/core/utils/globals.dart';
+import 'package:app/core/utils/utils.dart';
+import 'package:app/l10n/app_localizations.dart';
+import 'package:app/modules/app/general/app_module_routes.dart';
+import 'package:app/modules/auth/general/auth_module_routes.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:location/location.dart';
+
+class MainWidget extends StatefulWidget {
+  const MainWidget({super.key});
+
+  @override
+  State<MainWidget> createState() => _MainWidgetState();
+}
+
+class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
+  bool _firstLoad = false;
+  final sharedPreferenceHelper = Modular.get<SharedPreferenceHelper>();
+
+  @override
+  void initState() {
+    WidgetsBinding.instance.addObserver(this);
+    super.initState();
+    _initLocation();
+
+    /* always open splash first */
+    final accessToken = sharedPreferenceHelper.get(key: AppStores.kAccessToken);
+    final refreshToken = sharedPreferenceHelper.get(
+      key: AppStores.kRefreshToken,
+    );
+
+    if (accessToken != null) {
+      Modular.setInitialRoute('${AppRoutes.moduleApp}${AppModuleRoutes.main}');
+      Globals.globalAccessToken = accessToken.toString();
+      if (refreshToken != null) {
+        Globals.globalRefreshToken = refreshToken.toString();
+      }
+      Utils.debugLog('AccessToken found: $accessToken');
+      Utils.debugLog('RefreshToken found: ${refreshToken != null}');
+
+      if (JwtDecoder.isExpired(accessToken.toString())) {
+        Utils.debugLogError('Access token is expired');
+        // Let DioInterceptor handle the refresh on first API call failure (401/403)
+        // to avoid race condition where both MainWidget and DioInterceptor try to refresh
+        // leading to one of them failing due to Refresh Token Rotation.
+
+        if (refreshToken == null) {
+          Modular.setInitialRoute(
+            '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
+          );
+        }
+      } else {
+        Utils.debugLogSuccess('Access token is not expired $accessToken');
+      }
+    } else {
+      Modular.setInitialRoute(
+        '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
+      );
+    }
+    // Modular.setInitialRoute(
+    //   '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
+    // );
+    Modular.setNavigatorKey(AppKeys.navigatorKey);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      final location = Location();
+      bool serviceEnabled = await location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await location.requestService();
+        if (!serviceEnabled) return;
+      }
+
+      PermissionStatus permissionGranted = await location.hasPermission();
+      if (permissionGranted == PermissionStatus.denied) {
+        permissionGranted = await location.requestPermission();
+        if (permissionGranted != PermissionStatus.granted) return;
+      }
+
+      final locData = await location.getLocation();
+      Globals.globalLocation = locData;
+      Utils.debugLog(
+        'Global Location: ${locData.latitude}, ${locData.longitude}',
+      );
+    } catch (e) {
+      Utils.debugLog('Error getting location: $e');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return MediaQuery(
+      data: MediaQuery.of(
+        context,
+      ).copyWith(textScaler: const TextScaler.linear(1)),
+      child: MaterialApp.router(
+        title: GeneralHelper.appName,
+        debugShowCheckedModeBanner: false,
+        theme: AppTheme.theme,
+        // locale: appLanguage.locale,
+        scaffoldMessengerKey: AppKeys.scaffoldMessengerKey,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        supportedLocales: AppLocalizations.supportedLocales,
+        routerConfig: Modular.routerConfig,
+        localeResolutionCallback: (locale, supportedLocales) {
+          if (locale == null) return supportedLocales.first;
+
+          for (final supported in supportedLocales) {
+            if (supported.languageCode == locale.languageCode) {
+              return supported;
+            }
+          }
+
+          return supportedLocales.first; // fallback to en
+        },
+        localeListResolutionCallback: (locales, supportedLocales) {
+          if (locales == null || locales.isEmpty) {
+            return supportedLocales.first;
+          }
+
+          for (final locale in locales) {
+            for (final supported in supportedLocales) {
+              if (supported.languageCode == locale.languageCode) {
+                return supported;
+              }
+            }
+          }
+
+          return supportedLocales.first; // fallback to en
+        },
+      ),
+    );
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    Utils.debugLog('AppLifecycleState: $state');
+    if (state == AppLifecycleState.resumed) {
+      // get common data
+      // Modular.get<AppBloc>().add(AppConfigRequested());
+    }
+    super.didChangeAppLifecycleState(state);
+  }
+}

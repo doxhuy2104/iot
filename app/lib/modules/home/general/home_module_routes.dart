@@ -1,0 +1,4 @@
+class HomeModuleRoutes {
+  HomeModuleRoutes._();
+
+}

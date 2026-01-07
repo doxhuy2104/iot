@@ -1,17 +1,30 @@
 package com.iot.smartwatering.smart_watering_backend.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.iot.smartwatering.smart_watering_backend.entity.*;
-import com.iot.smartwatering.smart_watering_backend.repository.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.Map;
+
 import org.springframework.integration.annotation.ServiceActivator;
 import org.springframework.messaging.Message;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
-import java.util.Map;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.iot.smartwatering.smart_watering_backend.entity.Alert;
+import com.iot.smartwatering.smart_watering_backend.entity.Device;
+import com.iot.smartwatering.smart_watering_backend.entity.FlowData;
+import com.iot.smartwatering.smart_watering_backend.entity.SensorData;
+import com.iot.smartwatering.smart_watering_backend.entity.User;
+import com.iot.smartwatering.smart_watering_backend.entity.WaterLog;
+import com.iot.smartwatering.smart_watering_backend.entity.Zone;
+import com.iot.smartwatering.smart_watering_backend.repository.AlertRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.FlowDataRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.SensorDataRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.WaterLogRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Slf4j
@@ -24,6 +37,10 @@ public class MqttMessageHandler {
     private final DeviceRepository deviceRepository;
     private final ZoneRepository zoneRepository;
     private final AlertRepository alertRepository;
+    private final WaterLogRepository waterLogRepository;
+    private final NotificationService notificationService;
+    private final WeatherService weatherService;
+    private final MqttService mqttService;
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
     @Transactional
@@ -42,6 +59,10 @@ public class MqttMessageHandler {
                 handleDeviceStatus(topic, payload);
             } else if (topic.contains("alert")) {
                 handleAlert(topic, payload);
+            } else if (topic.contains("log")) {
+                handleWaterLog(topic, payload);
+            } else if (topic.contains("check-weather")) {
+                handleCheckWeather(topic, payload);
             }
 
         } catch (Exception e) {
@@ -70,12 +91,15 @@ public class MqttMessageHandler {
                     .orElseThrow(() -> new RuntimeException("Zone not found: " + zoneId));
 
             // Safely extract sensor values
-            Float moisture = data.containsKey("moisture") && data.get("moisture") != null ?
-                    ((Number) data.get("moisture")).floatValue() : null;
-            Float temperature = data.containsKey("temperature") && data.get("temperature") != null ?
-                    ((Number) data.get("temperature")).floatValue() : null;
-            Float humidity = data.containsKey("humidity") && data.get("humidity") != null ?
-                    ((Number) data.get("humidity")).floatValue() : null;
+            Float moisture = data.containsKey("moisture") && data.get("moisture") != null
+                    ? ((Number) data.get("moisture")).floatValue()
+                    : null;
+            Float temperature = data.containsKey("temperature") && data.get("temperature") != null
+                    ? ((Number) data.get("temperature")).floatValue()
+                    : null;
+            Float humidity = data.containsKey("humidity") && data.get("humidity") != null
+                    ? ((Number) data.get("humidity")).floatValue()
+                    : null;
 
             SensorData sensorData = SensorData.builder()
                     .zone(zone)
@@ -176,20 +200,156 @@ public class MqttMessageHandler {
     }
 
     private void checkThresholdAndAlert(Zone zone, SensorData sensorData) {
-        if (zone.getThresholdValue() != null &&
-                sensorData.getSoilMoisture() < zone.getThresholdValue()) {
+        if (zone.getThresholdMin() != null &&
+                sensorData.getSoilMoisture() < zone.getThresholdMin()) {
 
             Alert alert = Alert.builder()
                     .zone(zone)
+                    .device(sensorData.getDevice())
                     .severity(Alert.AlertSeverity.WARNING)
                     .message(String.format(
-                            "Độ ẩm đất thấp (%,.1f%%) dưới ngưỡng (%,.1f%%)",
+                            "Độ ẩm đất thấp (%,.1f%%) dưới ngưỡng minimum (%,.1f%%)",
                             sensorData.getSoilMoisture(),
-                            zone.getThresholdValue()))
+                            zone.getThresholdMin()))
+                    .createdAt(LocalDateTime.now())
                     .build();
 
             alertRepository.save(alert);
+            log.info("Created alert for low moisture in zone: {}", zone.getZoneId());
+
+            // Gửi notification và email cho user sở hữu zone
+            try {
+                User zoneOwner = zone.getUser();
+                if (zoneOwner != null) {
+                    // Tạo notification trong app
+                    notificationService.createNotificationFromAlert(alert, zoneOwner);
+                    log.info("Notification created for user: {}", zoneOwner.getUsername());
+                }
+            } catch (Exception e) {
+                log.error("Error sending alert notifications for zone: {}", zone.getZoneId(), e);
+            }
+        }
+    }
+
+    private void handleWaterLog(String topic, String payload) {
+        try {
+            log.info("Processing water log message - Topic: {}", topic);
+
+            // Topic format: irrigation/log/zone/{zoneId}
+            String[] parts = topic.split("/");
+            if (parts.length < 4) { // irrigation, log, zone, {id}
+                log.warn("Invalid topic format: {}", topic);
+                return;
+            }
+
+            String zoneIdStr = parts[parts.length - 1];
+            Long zoneId;
+            try {
+                zoneId = Long.parseLong(zoneIdStr);
+            } catch (NumberFormatException e) {
+                log.warn("Invalid zone ID in topic: {}", zoneIdStr);
+                return;
+            }
+
+            @SuppressWarnings("unchecked")
+            Map<String, Object> data = objectMapper.readValue(payload, Map.class);
+
+            Zone zone = zoneRepository.findById(zoneId).orElse(null);
+            if (zone == null) {
+                log.warn("Zone not found for ID: {}. Cannot create water log.", zoneId);
+                return;
+            }
+
+            LocalDateTime startedAt = LocalDateTime.now();
+            if (data.containsKey("startedAt") && data.get("startedAt") != null) {
+                String startedAtStr = (String) data.get("startedAt");
+                if (!startedAtStr.isEmpty()) {
+                    try {
+                        startedAt = LocalDateTime.parse(startedAtStr);
+                    } catch (Exception e) {
+                        log.warn("Failed to parse startedAt: {}. Using current time.", startedAtStr);
+                    }
+                }
+            }
+
+            Integer durationSeconds = 0;
+            if (data.containsKey("durationSeconds") && data.get("durationSeconds") instanceof Number) {
+                durationSeconds = ((Number) data.get("durationSeconds")).intValue();
+            }
+
+            Double volume = 0.0;
+            if (data.containsKey("volume") && data.get("volume") instanceof Number) {
+                volume = ((Number) data.get("volume")).doubleValue();
+            }
+
+            LocalDateTime endedAt = startedAt.plusSeconds(durationSeconds);
+
+            WaterLog waterLog = WaterLog.builder()
+                    .zone(zone)
+                    .startedAt(startedAt)
+                    .endedAt(endedAt)
+                    .durationSeconds(durationSeconds)
+                    .volume(volume)
+                    .reason(WaterLog.WaterReason.MANUAL)
+                    .status(WaterLog.WaterStatus.COMPLETED)
+                    .createdAt(LocalDateTime.now())
+                    .build();
+
+            WaterLog savedLog = waterLogRepository.save(waterLog);
+            log.info("Successfully saved water log (ID: {}) for zone: {}", savedLog.getLogId(), zoneId);
+
+            // Update zone total volume
+            if (volume != null && volume > 0) {
+                Double currentTotal = zone.getTotalVolume() == null ? 0.0 : zone.getTotalVolume();
+                zone.setTotalVolume(currentTotal + volume);
+                zoneRepository.save(zone);
+                log.info("Updated total volume for zone {}: {}", zoneId, zone.getTotalVolume());
+            }
+
+        } catch (Exception e) {
+        }
+    }
+
+    private void handleCheckWeather(String topic, String payload) {
+        try {
+            // irrigation/check-weather/zone/{zoneId}
+            String[] parts = topic.split("/");
+            if (parts.length < 4) {
+                log.warn("Invalid topic format for check-weather: {}", topic);
+                return;
+            }
+            String zoneIdStr = parts[parts.length - 1];
+            Long zoneId = Long.parseLong(zoneIdStr);
+
+            if (!"check".equalsIgnoreCase(payload.trim())) {
+                return;
+            }
+
+            Zone zone = zoneRepository.findById(zoneId).orElse(null);
+            if (zone == null) {
+                log.warn("Zone not found: {}", zoneId);
+                return;
+            }
+
+            String location = zone.getLocation();
+            boolean canWater = true;
+
+            if (location != null && !location.isEmpty()) {
+                // If it should stop (shouldStopWatering = true), then canWater = false
+                boolean shouldStop = weatherService.shouldStopWatering(location);
+                canWater = !shouldStop;
+            }
+
+            // Publish result to irrigation/can-on/zone/{zoneId}
+            // Need a raw publish method or can use generic one?
+            // "true" or "false" string.
+            String responseTopic = "irrigation/can-on/zone/" + zoneId;
+            String responsePayload = String.valueOf(canWater);
+
+            mqttService.publishRaw(responseTopic, responsePayload);
+
+        } catch (Exception e) {
+            log.error("Error handling check-weather", e);
         }
     }
 }
-

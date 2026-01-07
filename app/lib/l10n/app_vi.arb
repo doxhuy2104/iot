@@ -1,0 +1,38 @@
+{
+  "helloWorld": "Hello World!",
+  "@helloWorld": {
+    "description": "The conventional newborn programmer greeting"
+  },
+   "signIn":"Đăng nhập",
+  "signUp":"Đăng ký",
+  "haveAccount":"Đã có tài khoản?",
+    "dontHaveAccount":"Chưa có tài khoản?",
+
+  "email":"Email",
+  "password":"Mật khẩu",
+  "confirmPassword":"Mật khẩu xác nhận",
+  "createAccount":"Tạo tài khoản",
+  "ortherLogin":"Hoặc đăng nhập bằng",
+  "enterEmail":"Nhập địa chỉ email",
+  "enterPassword":"Nhập mật khẩu",
+  "enterConfirmPassword":"Nhập mật khẩu xác nhận",
+  "confirmPasswordError": "Mật khẩu không khớp, vui lòng nhập lại!",
+  "forgotPassword":"Quên mật khẩu?",
+  "forgotPasswordT":"Quên mật khẩu",
+  "invalidEmail":"Email không hợp lệ",
+  "passwordMustLeast8Char":"Mật khẩu cần ít nhất 8 kí tự",
+  "sendEmail":"Gửi email",
+  "googleLogin":"Đăng nhập bằng Google",
+  "home":"Trang chủ",
+  "account":"Tài khoản",
+  "lessons":"Bài học",
+  "practice":"Luyện tập",
+  "close":"Đóng",
+  "emailInUse": "Email đã được sử dụng",
+  "success": "Thành công",
+  "invalidEmailOrPassword": "Email hoặc mật khẩu không hợp lệ",
+  "register_success": "Đăng ký thành công",
+  "errorTitle": "Thất bại",
+  "zone":"Khu vực",
+  "soilMoisture":"Độ ẩm đất"
+}

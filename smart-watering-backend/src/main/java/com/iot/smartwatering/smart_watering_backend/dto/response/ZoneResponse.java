@@ -1,25 +1,28 @@
 package com.iot.smartwatering.smart_watering_backend.dto.response;
 
-import lombok.Builder;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder
 public class ZoneResponse {
     private Long zoneId;
     private String zoneName;
-    private BigDecimal location;
+    private String location;
     private String description;
-    private String longitude;
+    private BigDecimal longitude;
     private BigDecimal latitude;
-    private Double thresholdValue;
+    private Double thresholdMin;
+    private Double thresholdMax;
     private Boolean autoMode;
     private Boolean weatherMode;
     private Boolean pumpStatus;
     private Float currentMoisture;
+    private Double totalVolume;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private String deviceIdentifier;
 }
