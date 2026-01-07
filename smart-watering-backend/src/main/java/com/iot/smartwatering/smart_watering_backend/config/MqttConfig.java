@@ -24,6 +24,10 @@ public class MqttConfig {
     @Value("${mqtt.broker.clientId}")
     private String clientId;
 
+    private String getUniqueClientId() {
+        return clientId + "-" + java.util.UUID.randomUUID().toString().substring(0, 8);
+    }
+
     @Value("${mqtt.broker.username:}")
     private String username;
 
@@ -82,8 +86,12 @@ public class MqttConfig {
     public MessageProducer inbound() {
         String[] topics = { sensorTopic, statusTopic, "irrigation/log/zone/#", "irrigation/check-weather/zone/#" };
 
+        // Append unique suffix to avoid conflicts if running multiple instances or
+        // quick restarts
+        String uniqueClientId = getUniqueClientId() + "-inbound";
+
         MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
-                clientId + "-inbound", mqttClientFactory(), topics);
+                uniqueClientId, mqttClientFactory(), topics);
 
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
@@ -97,7 +105,10 @@ public class MqttConfig {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {
-        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(clientId + "-outbound", mqttClientFactory());
+        // Append unique suffix
+        String uniqueClientId = getUniqueClientId() + "-outbound";
+
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(uniqueClientId, mqttClientFactory());
 
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic("irrigation/control");
