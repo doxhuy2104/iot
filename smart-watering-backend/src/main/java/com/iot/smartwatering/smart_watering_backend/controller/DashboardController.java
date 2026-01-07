@@ -1,17 +1,20 @@
 package com.iot.smartwatering.smart_watering_backend.controller;
 
-import com.iot.smartwatering.smart_watering_backend.dto.response.ApiResponse;
-import com.iot.smartwatering.smart_watering_backend.repository.AlertRepository;
-import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
-import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
-import lombok.RequiredArgsConstructor;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.iot.smartwatering.smart_watering_backend.dto.response.ApiResponse;
+import com.iot.smartwatering.smart_watering_backend.repository.AlertRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/dashboard")
