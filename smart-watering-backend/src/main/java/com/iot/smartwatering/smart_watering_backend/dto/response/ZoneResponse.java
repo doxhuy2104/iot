@@ -21,6 +21,7 @@ public class ZoneResponse {
     private Boolean weatherMode;
     private Boolean pumpStatus;
     private Float currentMoisture;
+    private Double totalVolume;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private String deviceIdentifier;

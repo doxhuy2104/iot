@@ -48,6 +48,9 @@ public class Zone {
     private Double thresholdMin;
     @Column(name = "threshold_max")
     private Double thresholdMax;
+    @Column(name = "total_volume")
+    @Builder.Default
+    private Double totalVolume = 0.0;
     @Column(name = "auto_mode")
     @Builder.Default
     private Boolean autoMode = false;

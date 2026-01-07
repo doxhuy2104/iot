@@ -298,6 +298,14 @@ public class MqttMessageHandler {
             WaterLog savedLog = waterLogRepository.save(waterLog);
             log.info("Successfully saved water log (ID: {}) for zone: {}", savedLog.getLogId(), zoneId);
 
+            // Update zone total volume
+            if (volume != null && volume > 0) {
+                Double currentTotal = zone.getTotalVolume() == null ? 0.0 : zone.getTotalVolume();
+                zone.setTotalVolume(currentTotal + volume);
+                zoneRepository.save(zone);
+                log.info("Updated total volume for zone {}: {}", zoneId, zone.getTotalVolume());
+            }
+
         } catch (Exception e) {
         }
     }

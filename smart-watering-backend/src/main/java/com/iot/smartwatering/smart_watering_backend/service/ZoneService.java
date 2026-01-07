@@ -172,6 +172,7 @@ public class ZoneService {
                 .weatherMode(zone.getWeatherMode())
                 .pumpStatus(zone.getPumpStatus())
                 .currentMoisture(currentMoisture)
+                .totalVolume(zone.getTotalVolume())
                 .createdAt(zone.getCreatedAt())
                 .updatedAt(zone.getUpdatedAt())
                 .deviceIdentifier(zone.getDevice() != null ? zone.getDevice().getIdentifier() : null)

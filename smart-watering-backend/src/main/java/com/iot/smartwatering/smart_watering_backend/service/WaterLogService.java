@@ -64,6 +64,13 @@ public class WaterLogService {
         waterLogRepository.save(waterLog);
         log.info("Created water log for zone: {}", zone.getZoneId());
 
+        // Update zone total volume
+        if (waterLog.getVolume() != null && waterLog.getVolume() > 0) {
+            Double currentTotal = zone.getTotalVolume() == null ? 0.0 : zone.getTotalVolume();
+            zone.setTotalVolume(currentTotal + waterLog.getVolume());
+            zoneRepository.save(zone);
+        }
+
         return mapToResponse(waterLog);
     }
 
