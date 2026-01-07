@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { authApi } from '../../services/api';
+import { FaUser } from "react-icons/fa";
+import { IoLockClosedSharp } from "react-icons/io5";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -74,7 +76,7 @@ export default function Register() {
         <div className="input-group">
           <label className="input-label">Tên đăng nhập</label>
           <div className="input-wrapper">
-            <span className="input-icon">👤</span>
+            <span className="input-icon"><FaUser /></span>
             <input
               type="text"
               name="username"
@@ -89,7 +91,7 @@ export default function Register() {
         <div className="input-group">
           <label className="input-label">Email</label>
           <div className="input-wrapper">
-            <span className="input-icon">📧</span>
+            <span className="input-icon"><FaUser /></span>
             <input
               type="email"
               name="email"
@@ -104,7 +106,7 @@ export default function Register() {
         <div className="input-group">
           <label className="input-label">Mật khẩu</label>
           <div className="input-wrapper">
-            <span className="input-icon">🔒</span>
+            <span className="input-icon"><IoLockClosedSharp /></span>
             <input
               type="password"
               name="password"
@@ -119,7 +121,7 @@ export default function Register() {
         <div className="input-group">
           <label className="input-label">Xác nhận mật khẩu</label>
           <div className="input-wrapper">
-            <span className="input-icon">🔒</span>
+            <span className="input-icon"><IoLockClosedSharp /></span>
             <input
               type="password"
               name="confirmPassword"

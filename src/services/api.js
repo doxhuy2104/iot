@@ -69,29 +69,62 @@ export const zoneApi = {
       method: 'DELETE',
     }),
   
-  togglePump: (id, status) =>
-    fetchApi(`/api/zones/${id}/pump`, {
+  togglePump: (id, status, targetHumidity = null) =>
+    fetchApi('/api/control/water', {
       method: 'POST',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({ 
+        zoneId: parseInt(id), 
+        pump: status ? 'ON' : 'OFF',
+        ...(targetHumidity && { targetHumidity: parseInt(targetHumidity) }),
+      }),
     }),
 };
 
 // Sensor API
 export const sensorApi = {
-  getData: (zoneId) => fetchApi(`/api/zones/${zoneId}/sensors`),
+  getLatest: (zoneId) => fetchApi(`/api/sensors/zone/${zoneId}/latest`),
   
-  getHistory: (zoneId, days = 7) =>
-    fetchApi(`/api/zones/${zoneId}/sensors/history?days=${days}`),
+  getByZone: (zoneId) => fetchApi(`/api/sensors/zone/${zoneId}`),
+  
+  getByRange: (zoneId, startDate, endDate) =>
+    fetchApi(`/api/sensors/zone/${zoneId}/range?startDate=${startDate}&endDate=${endDate}`),
 };
+
+// Device API
+export const deviceApi = {
+  getAll: () => fetchApi('/api/devices'),
+  
+  getByZone: (zoneId) => fetchApi(`/api/devices/zone/${zoneId}`),
+  
+  getById: (deviceId) => fetchApi(`/api/devices/${deviceId}`),
+  
+  create: (data) =>
+    fetchApi('/api/devices', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  
+  updateStatus: (deviceId, status) =>
+    fetchApi(`/api/devices/${deviceId}/status`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+  
+  delete: (deviceId) =>
+    fetchApi(`/api/devices/${deviceId}`, {
+      method: 'DELETE',
+    }),
+};
+
 
 // Schedule API
 export const scheduleApi = {
-  getByZone: (zoneId) => fetchApi(`/api/zones/${zoneId}/schedules`),
+  getByZone: (zoneId) => fetchApi(`/api/schedules/zone/${zoneId}`),
   
   create: (zoneId, data) =>
-    fetchApi(`/api/zones/${zoneId}/schedules`, {
+    fetchApi('/api/schedules', {
       method: 'POST',
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, zoneId }),
     }),
   
   update: (scheduleId, data) =>
@@ -104,6 +137,16 @@ export const scheduleApi = {
     fetchApi(`/api/schedules/${scheduleId}`, {
       method: 'DELETE',
     }),
+
+  toggleActive: (scheduleId, active) =>
+    fetchApi(`/api/schedules/${scheduleId}/active?active=${active}`, {
+      method: 'PATCH',
+    }),
+};
+
+// Water Log API
+export const waterLogApi = {
+  getByZone: (zoneId) => fetchApi(`/api/water-logs/zone/${zoneId}`),
 };
 
 // User API
@@ -117,4 +160,22 @@ export const userApi = {
     }),
 };
 
+// Dashboard API
+export const dashboardApi = {
+  getStats: () => fetchApi('/api/dashboard/stats'),
+};
+
+// Weather API
+export const weatherApi = {
+  getCurrent: (location) => 
+    fetchApi(`/api/weather/current${location ? `?location=${encodeURIComponent(location)}` : ''}`),
+  
+  getForecast: (location, days = 3) =>
+    fetchApi(`/api/weather/forecast?${location ? `location=${encodeURIComponent(location)}&` : ''}days=${days}`),
+  
+  checkRain: (location) =>
+    fetchApi(`/api/weather/check-rain${location ? `?location=${encodeURIComponent(location)}` : ''}`),
+};
+
 export default fetchApi;
+

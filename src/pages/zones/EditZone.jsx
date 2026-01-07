@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { zoneApi } from '../../services/api';
 
-export default function AddZone() {
+export default function EditZone() {
+  const { id } = useParams();
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     zoneName: '',
@@ -14,9 +15,39 @@ export default function AddZone() {
     autoMode: true,
     weatherMode: false,
   });
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [gettingLocation, setGettingLocation] = useState(false);
+
+  useEffect(() => {
+    loadZone();
+  }, [id]);
+
+  const loadZone = async () => {
+    try {
+      setLoading(true);
+      const result = await zoneApi.getById(id);
+      console.log('Zone loaded for edit:', result);
+      if (result.data) {
+        const zone = result.data;
+        setFormData({
+          zoneName: zone.zoneName || '',
+          location: zone.location || '',
+          description: zone.description || '',
+          latitude: zone.latitude || '',
+          longitude: zone.longitude || '',
+          thresholdValue: zone.thresholdValue || 30,
+          autoMode: zone.autoMode ?? true,
+          weatherMode: zone.weatherMode ?? false,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load zone:', err);
+      setError('Không thể tải thông tin khu vực');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -24,31 +55,6 @@ export default function AddZone() {
       ...formData, 
       [name]: type === 'checkbox' ? checked : value 
     });
-  };
-
-  // Get current location
-  const getCurrentLocation = () => {
-    if (!navigator.geolocation) {
-      setError('Trình duyệt không hỗ trợ định vị');
-      return;
-    }
-
-    setGettingLocation(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setFormData({
-          ...formData,
-          latitude: position.coords.latitude.toFixed(6),
-          longitude: position.coords.longitude.toFixed(6),
-        });
-        setGettingLocation(false);
-      },
-      (err) => {
-        console.error('Geolocation error:', err);
-        setError('Không thể lấy vị trí. Vui lòng nhập thủ công.');
-        setGettingLocation(false);
-      }
-    );
   };
 
   const handleSubmit = async (e) => {
@@ -60,14 +66,14 @@ export default function AddZone() {
       return;
     }
     if (!formData.latitude || !formData.longitude) {
-      setError('Vui lòng nhập hoặc lấy vị trí tọa độ');
+      setError('Vui lòng nhập tọa độ');
       return;
     }
     
-    setLoading(true);
+    setSaving(true);
     
     try {
-      const result = await zoneApi.create({
+      const result = await zoneApi.update(id, {
         zoneName: formData.zoneName,
         location: formData.location,
         description: formData.description,
@@ -77,26 +83,41 @@ export default function AddZone() {
         autoMode: formData.autoMode,
         weatherMode: formData.weatherMode,
       });
-      console.log('Zone created:', result);
-      alert('Tạo khu vực thành công!');
-      navigate('/zones');
+      console.log('Zone updated:', result);
+      alert('Cập nhật khu vực thành công!');
+      navigate(`/zones/${id}`);
     } catch (err) {
-      console.error('Failed to create zone:', err);
-      setError(err.message || 'Không thể tạo khu vực');
+      console.error('Failed to update zone:', err);
+      setError(err.message || 'Không thể cập nhật khu vực');
     } finally {
-      setLoading(false);
+      setSaving(false);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="fade-in">
+        <div className="navbar">
+          <div className="container flex items-center gap-md">
+            <Link to={`/zones/${id}`} className="btn btn-icon" style={{ background: 'rgba(255,255,255,0.2)' }}>
+              ←
+            </Link>
+            <h1 className="navbar-title">Đang tải...</h1>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fade-in">
       {/* Header */}
       <div className="navbar">
         <div className="container flex items-center gap-md">
-          <Link to="/zones" className="btn btn-icon" style={{ background: 'rgba(255,255,255,0.2)' }}>
+          <Link to={`/zones/${id}`} className="btn btn-icon" style={{ background: 'rgba(255,255,255,0.2)' }}>
             ←
           </Link>
-          <h1 className="navbar-title">Thêm khu vực</h1>
+          <h1 className="navbar-title">Chỉnh sửa khu vực</h1>
         </div>
       </div>
 
@@ -125,7 +146,6 @@ export default function AddZone() {
                 name="zoneName"
                 className="input"
                 style={{ paddingLeft: 'var(--spacing-md)' }}
-                placeholder="VD: Nhà kính A"
                 value={formData.zoneName}
                 onChange={handleChange}
                 required
@@ -133,13 +153,12 @@ export default function AddZone() {
             </div>
 
             <div className="input-group" style={{ marginBottom: 'var(--spacing-md)' }}>
-              <label className="input-label">Vị trí (địa chỉ)</label>
+              <label className="input-label">Vị trí</label>
               <input
                 type="text"
                 name="location"
                 className="input"
                 style={{ paddingLeft: 'var(--spacing-md)' }}
-                placeholder="VD: Khu vườn phía Bắc, Hà Nội"
                 value={formData.location}
                 onChange={handleChange}
               />
@@ -150,47 +169,27 @@ export default function AddZone() {
               <textarea
                 name="description"
                 className="input"
-                style={{ 
-                  paddingLeft: 'var(--spacing-md)', 
-                  minHeight: '80px',
-                  resize: 'vertical',
-                }}
-                placeholder="Mô tả về khu vực tưới..."
+                style={{ paddingLeft: 'var(--spacing-md)', minHeight: '80px', resize: 'vertical' }}
                 value={formData.description}
                 onChange={handleChange}
               />
             </div>
           </div>
 
-          {/* Location Coordinates */}
+          {/* Coordinates */}
           <div className="card" style={{ marginBottom: 'var(--spacing-md)' }}>
-            <div className="flex justify-between items-center" style={{ marginBottom: 'var(--spacing-md)' }}>
-              <h3 className="text-lg font-semibold">Tọa độ GPS *</h3>
-              <button
-                type="button"
-                onClick={getCurrentLocation}
-                disabled={gettingLocation}
-                className="btn"
-                style={{ 
-                  background: 'var(--accent-blue)', 
-                  color: 'white',
-                  fontSize: '14px',
-                  padding: '8px 12px',
-                }}
-              >
-                {gettingLocation ? ' Đang lấy...' : ' Lấy vị trí hiện tại'}
-              </button>
-            </div>
+            <h3 className="text-lg font-semibold" style={{ marginBottom: 'var(--spacing-md)' }}>
+              Tọa độ GPS
+            </h3>
             
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-md)' }}>
               <div className="input-group">
-                <label className="input-label">Vĩ độ (Latitude) *</label>
+                <label className="input-label">Vĩ độ *</label>
                 <input
                   type="number"
                   name="latitude"
                   className="input"
                   style={{ paddingLeft: 'var(--spacing-md)' }}
-                  placeholder="VD: 21.0285"
                   step="any"
                   value={formData.latitude}
                   onChange={handleChange}
@@ -198,13 +197,12 @@ export default function AddZone() {
                 />
               </div>
               <div className="input-group">
-                <label className="input-label">Kinh độ (Longitude) *</label>
+                <label className="input-label">Kinh độ *</label>
                 <input
                   type="number"
                   name="longitude"
                   className="input"
                   style={{ paddingLeft: 'var(--spacing-md)' }}
-                  placeholder="VD: 105.8542"
                   step="any"
                   value={formData.longitude}
                   onChange={handleChange}
@@ -212,9 +210,6 @@ export default function AddZone() {
                 />
               </div>
             </div>
-            <p className="text-sm text-content" style={{ marginTop: 'var(--spacing-sm)' }}>
-              Dùng để theo dõi thời tiết tại khu vực
-            </p>
           </div>
 
           {/* Irrigation Settings */}
@@ -224,7 +219,7 @@ export default function AddZone() {
             </h3>
             
             <div className="input-group" style={{ marginBottom: 'var(--spacing-md)' }}>
-              <label className="input-label">Ngưỡng độ ẩm tự động tưới (%)</label>
+              <label className="input-label">Ngưỡng độ ẩm (%)</label>
               <input
                 type="range"
                 name="thresholdValue"
@@ -248,19 +243,14 @@ export default function AddZone() {
               padding: 'var(--spacing-sm) 0',
               borderTop: '1px solid var(--border-color)',
             }}>
-              <div>
-                <span>Chế độ tự động</span>
-                <p className="text-sm text-content">Tự động tưới khi độ ẩm dưới ngưỡng</p>
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  name="autoMode"
-                  checked={formData.autoMode}
-                  onChange={handleChange}
-                  style={{ width: '20px', height: '20px' }}
-                />
-              </label>
+              <span>Chế độ tự động</span>
+              <input
+                type="checkbox"
+                name="autoMode"
+                checked={formData.autoMode}
+                onChange={handleChange}
+                style={{ width: '20px', height: '20px' }}
+              />
             </div>
 
             <div style={{ 
@@ -270,29 +260,24 @@ export default function AddZone() {
               padding: 'var(--spacing-sm) 0',
               borderTop: '1px solid var(--border-color)',
             }}>
-              <div>
-                <span>Chế độ thời tiết</span>
-                <p className="text-sm text-content">Điều chỉnh theo dự báo thời tiết</p>
-              </div>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  name="weatherMode"
-                  checked={formData.weatherMode}
-                  onChange={handleChange}
-                  style={{ width: '20px', height: '20px' }}
-                />
-              </label>
+              <span>Chế độ thời tiết</span>
+              <input
+                type="checkbox"
+                name="weatherMode"
+                checked={formData.weatherMode}
+                onChange={handleChange}
+                style={{ width: '20px', height: '20px' }}
+              />
             </div>
           </div>
 
           <button 
             type="submit" 
             className="btn btn-primary" 
-            disabled={loading || !formData.zoneName}
+            disabled={saving}
             style={{ width: '100%' }}
           >
-            {loading ? 'Đang tạo...' : 'Tạo khu vực'}
+            {saving ? 'Đang lưu...' : 'Lưu thay đổi'}
           </button>
         </form>
       </div>

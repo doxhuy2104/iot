@@ -9,6 +9,10 @@ import Dashboard from './pages/Dashboard';
 import Zones from './pages/zones/Zones';
 import ZoneDetail from './pages/zones/ZoneDetail';
 import AddZone from './pages/zones/AddZone';
+import EditZone from './pages/zones/EditZone';
+import SetupDevice from './pages/devices/SetupDevice';
+import AddSchedule from './pages/zones/AddSchedule';
+import History from './pages/zones/History';
 import Account from './pages/Account';
 
 // Components
@@ -75,6 +79,10 @@ function AppRoutes() {
       <Route path="/zones" element={<ProtectedRoute><Zones /></ProtectedRoute>} />
       <Route path="/zones/add" element={<ProtectedRoute><AddZone /></ProtectedRoute>} />
       <Route path="/zones/:id" element={<ProtectedRoute><ZoneDetail /></ProtectedRoute>} />
+      <Route path="/zones/:id/edit" element={<ProtectedRoute><EditZone /></ProtectedRoute>} />
+      <Route path="/zones/:id/setup-device" element={<ProtectedRoute><SetupDevice /></ProtectedRoute>} />
+      <Route path="/zones/:id/add-schedule" element={<ProtectedRoute><AddSchedule /></ProtectedRoute>} />
+      <Route path="/zones/:id/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
       
       {/* Default redirect */}

@@ -68,7 +68,6 @@ export default function ForgotPassword() {
         <div className="input-group">
           <label className="input-label">Email</label>
           <div className="input-wrapper">
-            <span className="input-icon">📧</span>
             <input
               type="email"
               className="input"

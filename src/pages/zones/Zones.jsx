@@ -1,25 +1,46 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { zoneApi } from '../../services/api';
+import { useMqtt } from '../../hooks/useMqtt';
+import { PiPottedPlantFill } from "react-icons/pi";
+import { FaLocationArrow } from "react-icons/fa";
+import { FaDroplet } from "react-icons/fa6";
 
 function ZoneCard({ zone }) {
-  // Default values for missing data
-  const moisturePercent = zone.soilMoisture ? Math.round(zone.soilMoisture * 100) : 0;
+  // MQTT real-time data
+  const { isConnected: mqttConnected, sensorData: mqttSensorData, isDeviceOnline: mqttDeviceOnline } = useMqtt(zone.id || zone.zoneId);
+
+  // Default values for missing data, prioritize MQTT
+  const apiMoisture = zone.soilMoisture ? Math.round(zone.soilMoisture * 100) : 0;
+  
+  // Use MQTT humidity if available (already in %), else API moisture
+  const moisturePercent = mqttSensorData?.humidity != null 
+    ? Math.round(mqttSensorData.humidity) 
+    : apiMoisture;
+    
   const accent = zone.accent || '#7FC8A9';
+  
+  // Pump status from MQTT or API
+  const isPumpOn = mqttSensorData?.pump != null 
+    ? mqttSensorData.pump === 'on' 
+    : zone.pumpStatus;
   
   return (
     <div className="card fade-in">
       {/* Header */}
       <div className="card-header">
         <div className="zone-icon" style={{ background: accent }}>
-          📍
+          <FaLocationArrow />
         </div>
         <div style={{ flex: 1 }}>
           <div className="font-semibold text-lg">{zone.zoneName || zone.name || 'Khu vực'}</div>
-          <div className="text-content text-sm">{zone.location || 'Chưa có vị trí'}</div>
+          <div className="text-content text-sm">
+            {zone.location || 'Chưa có vị trí'}
+            {mqttConnected && <span className="text-success" style={{ fontSize: '10px', marginLeft: '6px' }}>● Live</span>}
+          </div>
         </div>
-        <span style={{ color: zone.pumpStatus ? 'var(--primary)' : 'var(--text-secondary)' }}>
-          {zone.pumpStatus ? '💧' : '💨'}
+        <span style={{ color: isPumpOn ? 'var(--primary)' : 'var(--text-secondary)' }}>
+          {isPumpOn ? '💧' : ''}
         </span>
       </div>
 
@@ -41,9 +62,9 @@ function ZoneCard({ zone }) {
           <span className="chip-icon">⚙️</span>
           {zone.autoMode ? 'Tự động' : 'Thủ công'}
         </div>
-        <div className={`chip ${zone.pumpStatus ? 'chip-success' : ''}`}>
-          <span className="chip-icon">💧</span>
-          {zone.pumpStatus ? 'Đang tưới' : 'Tắt'}
+        <div className={`chip ${isPumpOn ? 'chip-success' : ''}`}>
+          <span className="chip-icon"><FaDroplet /></span>
+          {isPumpOn ? 'Đang tưới' : 'Tắt'}
         </div>
         <div style={{ flex: 1 }} />
         <Link 
@@ -116,7 +137,7 @@ export default function Zones() {
           </div>
         ) : (
           <div className="card" style={{ textAlign: 'center', padding: 'var(--spacing-xl)' }}>
-            <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-md)' }}>🌱</div>
+            <div style={{ fontSize: '48px', marginBottom: 'var(--spacing-md)' }}><PiPottedPlantFill className="text-2xl" /></div>
             <h3 className="text-h3">Chưa có khu vực nào</h3>
             <p className="text-content" style={{ marginBottom: 'var(--spacing-lg)' }}>
               Thêm khu vực đầu tiên để bắt đầu quản lý hệ thống tưới

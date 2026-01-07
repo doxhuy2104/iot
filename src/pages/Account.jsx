@@ -1,5 +1,10 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { IoMdSettings } from "react-icons/io";
+import { IoMdInformationCircle } from "react-icons/io";
+import { IoMdHome } from "react-icons/io";
+import { PiPottedPlantFill } from "react-icons/pi";
+import { FaUser } from "react-icons/fa";
 
 export default function Account() {
   const { user, logout } = useAuth();
@@ -37,7 +42,7 @@ export default function Account() {
               fontSize: '24px',
               fontWeight: 'bold',
             }}>
-              {user?.username?.charAt(0)?.toUpperCase() || '👤'}
+              {user?.username?.charAt(0)?.toUpperCase() || <FaUser />}
             </div>
             <div>
               <div className="text-lg font-semibold">{user?.username || 'Người dùng'}</div>
@@ -55,7 +60,7 @@ export default function Account() {
               gap: 'var(--spacing-md)',
               padding: 'var(--spacing-sm) 0',
             }}>
-              <span>🏠</span>
+              <span><IoMdHome className="text-2xl" /></span>
               <span className="font-medium">Dashboard</span>
               <span style={{ marginLeft: 'auto' }} className="text-content">→</span>
             </Link>
@@ -66,7 +71,7 @@ export default function Account() {
               gap: 'var(--spacing-md)',
               padding: 'var(--spacing-sm) 0',
             }}>
-              <span>🌱</span>
+              <span><PiPottedPlantFill className="text-2xl" /></span>
               <span className="font-medium">Khu vực tưới</span>
               <span style={{ marginLeft: 'auto' }} className="text-content">→</span>
             </Link>
@@ -78,7 +83,7 @@ export default function Account() {
               padding: 'var(--spacing-sm) 0',
               cursor: 'pointer',
             }}>
-              <span>⚙️</span>
+              <span><IoMdSettings className="text-2xl" /></span>
               <span className="font-medium">Cài đặt</span>
               <span style={{ marginLeft: 'auto' }} className="text-content">→</span>
             </div>
@@ -90,7 +95,7 @@ export default function Account() {
               padding: 'var(--spacing-sm) 0',
               cursor: 'pointer',
             }}>
-              <span>ℹ️</span>
+              <span><IoMdInformationCircle className="text-2xl" /></span>
               <span className="font-medium">Về ứng dụng</span>
               <span style={{ marginLeft: 'auto' }} className="text-content">→</span>
             </div>
@@ -103,7 +108,7 @@ export default function Account() {
           className="btn btn-danger"
           style={{ width: '100%' }}
         >
-          🚪 Đăng xuất
+           Đăng xuất
         </button>
       </div>
     </div>

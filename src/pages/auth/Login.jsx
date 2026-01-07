@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { authApi } from '../../services/api';
+import { FaUser } from "react-icons/fa";
+import { IoLockClosedSharp } from "react-icons/io5";
 
 export default function Login() {
   const [username, setUsername] = useState('');
@@ -19,8 +21,8 @@ export default function Login() {
       setError('Tên đăng nhập phải có ít nhất 3 ký tự');
       return;
     }
-    if (password.length < 8) {
-      setError('Mật khẩu phải có ít nhất 8 ký tự');
+    if (!password) {
+      setError('Vui lòng nhập mật khẩu');
       return;
     }
 
@@ -62,7 +64,7 @@ export default function Login() {
         <div className="input-group">
           <label className="input-label">Tên đăng nhập</label>
           <div className="input-wrapper">
-            <span className="input-icon">📧</span>
+            <span className="input-icon"><FaUser /></span>
             <input
               type="text"
               className="input"
@@ -76,7 +78,7 @@ export default function Login() {
         <div className="input-group">
           <label className="input-label">Mật khẩu</label>
           <div className="input-wrapper">
-            <span className="input-icon">🔒</span>
+            <span className="input-icon"><IoLockClosedSharp /></span>
             <input
               type="password"
               className="input"
