@@ -22,9 +22,10 @@ int thresholdMin = 0;
 int thresholdMax = 100;
 bool autoMode = false;
 bool weatherMode = false;
+float totalVolumeOffset = 0.0;
 
-// Schedule & Mode Globals
-// Schedule & Mode Globals
+Preferences prefs;
+
 struct Schedule {
   int hour;
   int minute;
@@ -81,8 +82,6 @@ int lastCheckedMinute = -1;
 String sessionStartTime = "";
 unsigned long pumpStartMillis = 0;
 float startVolume = 0;
-
-Preferences prefs;
 
 WebServer server(80);
 
@@ -152,6 +151,12 @@ void turnPumpOff() {
     client.publish(logTopic.c_str(), buffer);
 
     Serial.println("Pump turned OFF. Log sent: " + String(buffer));
+
+    // Save Total Volume
+    float currentTotal = totalVolumeOffset + flSensor.getVolume();
+    prefs.begin("config", false);
+    prefs.putFloat("totalVolume", currentTotal);
+    prefs.end();
 
     targetHumidity = 0;
     sessionStartTime = "";
@@ -286,6 +291,7 @@ void callback(char *topic, byte *payload, unsigned int length) {
         String pumpCmd = doc["pump"];
         if (pumpCmd == "on") {
           turnPumpOn(timeFromApp);
+          currentMode = MODE_MANUAL;
           Serial.println("Pump turned ON via MQTT (JSON)");
         } else if (pumpCmd == "off") {
           turnPumpOff();
@@ -300,6 +306,7 @@ void callback(char *topic, byte *payload, unsigned int length) {
     } else {
       if (message == "on") {
         turnPumpOn("");
+        currentMode = MODE_MANUAL;
         Serial.println("Pump turned ON via MQTT");
       } else if (message == "off") {
         turnPumpOff();
@@ -323,6 +330,25 @@ void callback(char *topic, byte *payload, unsigned int length) {
 
   String configTopic = "irrigation/config/zone/" + zoneId;
   if (String(topic) == configTopic) {
+    if (message == "deleted") {
+      Serial.println("Received delete command. Resetting factory defaults...");
+
+      // Clear Config
+      prefs.begin("config", false);
+      prefs.clear();
+      prefs.end();
+
+      // Clear Schedules
+      prefs.begin("schedule", false);
+      prefs.clear();
+      prefs.end();
+
+      WiFi.disconnect(true);
+      delay(1000);
+      ESP.restart();
+      return;
+    }
+
     StaticJsonDocument<256> doc;
     DeserializationError error = deserializeJson(doc, message);
     if (!error) {
@@ -433,6 +459,10 @@ void setup() {
   Serial.print("Stored Zone ID: ");
   Serial.println(zoneId);
 
+  totalVolumeOffset = prefs.getFloat("totalVolume", 0.0);
+  Serial.print("Loaded Total Volume: ");
+  Serial.println(totalVolumeOffset);
+
   prefs.end();
 
   loadSchedules();
@@ -504,7 +534,7 @@ void loop() {
     bool isPumpOn = digitalRead(PUMP_PIN) == RELAY_ON;
     flSensor.read();
     float flowRate = flSensor.getFlowRate_m();
-    float totalVolume = flSensor.getVolume();
+    float totalVolume = totalVolumeOffset + flSensor.getVolume();
 
     int humidityPercent = map(soilValue, 4095, 0, 0, 100);
     humidityPercent = constrain(humidityPercent, 0, 100);
