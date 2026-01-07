@@ -25,17 +25,18 @@ import com.iot.smartwatering.smart_watering_backend.enums.UserRole;
 import com.iot.smartwatering.smart_watering_backend.repository.AlertRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.FlowDataRepository;
-import com.iot.smartwatering.smart_watering_backend.repository.NotificationRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.SensorDataRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.UserRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/admin")
 @RequiredArgsConstructor
 @PreAuthorize("hasRole('ADMIN')")
+@Slf4j
 public class AdminSystemController {
 
         private final UserRepository userRepository;
@@ -44,7 +45,6 @@ public class AdminSystemController {
         private final AlertRepository alertRepository;
         private final SensorDataRepository sensorDataRepository;
         private final FlowDataRepository flowDataRepository;
-        private final NotificationRepository notificationRepository;
 
         /**
          * Thống kê tổng quan hệ thống
@@ -243,7 +243,19 @@ public class AdminSystemController {
         public ResponseEntity<ApiResponse<Map<String, Object>>> exportStatistics() {
                 Map<String, Object> exportData = new HashMap<>();
                 exportData.put("exportedAt", LocalDateTime.now());
-                exportData.put("statistics", getSystemStatistics().getBody().getData());
+
+                try {
+                        ResponseEntity<ApiResponse<SystemStatisticsResponse>> statsResponse = getSystemStatistics();
+                        if (statsResponse != null && statsResponse.getBody() != null) {
+                                ApiResponse<SystemStatisticsResponse> body = statsResponse.getBody();
+                                if (body.getData() != null) {
+                                        exportData.put("statistics", body.getData());
+                                }
+                        }
+                } catch (Exception e) {
+                        log.error("Error getting statistics for export", e);
+                }
+
                 exportData.put("totalZones", zoneRepository.count());
                 exportData.put("totalDevices", deviceRepository.count());
                 exportData.put("totalUsers", userRepository.count());
@@ -276,10 +288,9 @@ public class AdminSystemController {
                 map.put("identifier", device.getIdentifier());
                 map.put("type", device.getType());
                 map.put("status", device.getStatus());
-                // map.put("ipAddress", device.getIpAddress());
-                // map.put("macAddress", device.getMacAddress());
-                // map.put("firmwareVersion", device.getFirmwareVersion());
-                // map.put("lastCommunication", device.getLastCommunication());
+                map.put("mqttTopicPublish", device.getMqttTopicPublish());
+                map.put("mqttTopicSubscribe", device.getMqttTopicSubscribe());
+                map.put("createdAt", device.getCreatedAt());
                 map.put("zoneId", device.getZone() != null ? device.getZone().getZoneId() : null);
                 map.put("zoneName", device.getZone() != null ? device.getZone().getZoneName() : null);
                 return map;
