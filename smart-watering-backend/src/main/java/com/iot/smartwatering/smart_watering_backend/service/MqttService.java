@@ -68,4 +68,36 @@ public class MqttService {
             log.error("Error sending config update to MQTT", e);
         }
     }
+
+    public void publishScheduleUpdate(Long zoneId, Object scheduleData) {
+        try {
+            String jsonPayload = objectMapper.writeValueAsString(scheduleData);
+            String topic = "irrigation/schedule/zone/" + zoneId;
+
+            mqttOutboundChannel.send(
+                    MessageBuilder.withPayload(jsonPayload)
+                            .setHeader("mqtt_topic", topic)
+                            .setHeader("mqtt_retained", true)
+                            .build());
+
+            log.info("Published schedule update to topic: {}", topic);
+
+        } catch (Exception e) {
+            log.error("Error sending schedule update to MQTT", e);
+        }
+    }
+
+    public void publishRaw(String topic, String payload) {
+        try {
+            mqttOutboundChannel.send(
+                    MessageBuilder.withPayload(payload)
+                            .setHeader("mqtt_topic", topic)
+                            .build());
+
+            log.info("Published raw message to topic: {} - {}", topic, payload);
+
+        } catch (Exception e) {
+            log.error("Error sending raw message to MQTT", e);
+        }
+    }
 }

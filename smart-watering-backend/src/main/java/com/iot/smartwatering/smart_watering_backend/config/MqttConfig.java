@@ -80,7 +80,7 @@ public class MqttConfig {
     // Inbound adapter for receiving messages
     @Bean
     public MessageProducer inbound() {
-        String[] topics = { sensorTopic, statusTopic, "irrigation/log/zone/#" };
+        String[] topics = { sensorTopic, statusTopic, "irrigation/log/zone/#", "irrigation/check-weather/zone/#" };
 
         MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
                 clientId + "-inbound", mqttClientFactory(), topics);

@@ -39,6 +39,8 @@ public class MqttMessageHandler {
     private final AlertRepository alertRepository;
     private final WaterLogRepository waterLogRepository;
     private final NotificationService notificationService;
+    private final WeatherService weatherService;
+    private final MqttService mqttService;
 
     @ServiceActivator(inputChannel = "mqttInputChannel")
     @Transactional
@@ -59,6 +61,8 @@ public class MqttMessageHandler {
                 handleAlert(topic, payload);
             } else if (topic.contains("log")) {
                 handleWaterLog(topic, payload);
+            } else if (topic.contains("check-weather")) {
+                handleCheckWeather(topic, payload);
             }
 
         } catch (Exception e) {
@@ -295,7 +299,49 @@ public class MqttMessageHandler {
             log.info("Successfully saved water log (ID: {}) for zone: {}", savedLog.getLogId(), zoneId);
 
         } catch (Exception e) {
-            log.error("Error handling water log for topic: " + topic, e);
+        }
+    }
+
+    private void handleCheckWeather(String topic, String payload) {
+        try {
+            // irrigation/check-weather/zone/{zoneId}
+            String[] parts = topic.split("/");
+            if (parts.length < 4) {
+                log.warn("Invalid topic format for check-weather: {}", topic);
+                return;
+            }
+            String zoneIdStr = parts[parts.length - 1];
+            Long zoneId = Long.parseLong(zoneIdStr);
+
+            if (!"check".equalsIgnoreCase(payload.trim())) {
+                return;
+            }
+
+            Zone zone = zoneRepository.findById(zoneId).orElse(null);
+            if (zone == null) {
+                log.warn("Zone not found: {}", zoneId);
+                return;
+            }
+
+            String location = zone.getLocation();
+            boolean canWater = true;
+
+            if (location != null && !location.isEmpty()) {
+                // If it should stop (shouldStopWatering = true), then canWater = false
+                boolean shouldStop = weatherService.shouldStopWatering(location);
+                canWater = !shouldStop;
+            }
+
+            // Publish result to irrigation/can-on/zone/{zoneId}
+            // Need a raw publish method or can use generic one?
+            // "true" or "false" string.
+            String responseTopic = "irrigation/can-on/zone/" + zoneId;
+            String responsePayload = String.valueOf(canWater);
+
+            mqttService.publishRaw(responseTopic, responsePayload);
+
+        } catch (Exception e) {
+            log.error("Error handling check-weather", e);
         }
     }
 }

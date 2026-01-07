@@ -10,8 +10,12 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.iot.smartwatering.smart_watering_backend.dto.request.ScheduleRequest;
+import com.iot.smartwatering.smart_watering_backend.dto.response.ScheduleResponse;
 import com.iot.smartwatering.smart_watering_backend.entity.Schedule;
+import com.iot.smartwatering.smart_watering_backend.entity.Zone;
 import com.iot.smartwatering.smart_watering_backend.repository.ScheduleRepository;
+import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
+    private final ZoneRepository zoneRepository;
     private final MqttService mqttService;
 
     @Scheduled(cron = "0 * * * * *") // Runs every minute at the top of the minute
@@ -85,19 +90,65 @@ public class ScheduleService {
         Long zoneId = schedule.getZone().getZoneId();
 
         // Publish ON command
-        // We can send duration as well if the device supports it, or just ON.
-        // Assuming simplistic ON for now as per user request "kiểm tra đến lịch ...
-        // publish".
-        // Use a specialized message if needed, but existing control is generic.
-        // We might want to send 'duration' in the payload if possible.
-        // MqttService.publishControlCommand accepts (zoneId, action).
-        // Action is String. Maybe we can pass "ON" or a JSON string?
-        // The MqttService wraps action in a JSON payload: { "action": action }.
-        // So passing "ON" is safe.
         mqttService.publishControlCommand(zoneId, "on", null);
+    }
 
-        // Note: If we need to turn it OFF after duration, we need another mechanism
-        // (e.g., Delayed task, or device handles it).
-        // For this task, strictly checking schedule and publishing is the goal.
+    @Transactional
+    public ScheduleResponse createSchedule(ScheduleRequest request) {
+        Zone zone = zoneRepository.findById(Long.valueOf(request.getZoneId()))
+                .orElseThrow(() -> new RuntimeException("Zone not found"));
+
+        Schedule schedule = Schedule.builder()
+                .zone(zone)
+                .startTime(LocalDateTime.of(java.time.LocalDate.now(), request.getStartTime())) // ScheduleRequest has
+                                                                                                // LocalTime?
+                .duration(Long.valueOf(request.getDuration()))
+                .volume(request.getVolume())
+                .repeatDays(request.getRepeatDays())
+                .active(request.getActive() != null ? request.getActive() : true)
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+
+        // Warning: ScheduleRequest startTime is LocalTime, Schedule entity startTime is
+        // LocalDateTime.
+        // Usually 'startTime' in schedule implies the *next* run time or just the time
+        // of day.
+        // If it's a repeating schedule, we use Time component.
+        // However, the Entity has LocalDateTime.
+        // I will set it to today + time.
+
+        schedule = scheduleRepository.save(schedule);
+
+        // Publish to MQTT
+        ScheduleResponse response = mapToResponse(schedule);
+        mqttService.publishScheduleUpdate(zone.getZoneId(), response);
+
+        return response;
+    }
+
+    @Transactional(readOnly = true)
+    public List<ScheduleResponse> getSchedulesByZoneId(Long zoneId) {
+        // Validate zone exists ? Or just return empty list.
+        // Repository returns list.
+        return scheduleRepository.findByZone_ZoneId(zoneId).stream()
+                .map(this::mapToResponse)
+                .toList();
+        // Note: .toList() is Java 16+. If using older Java, use
+        // .collect(Collectors.toList())
+    }
+
+    private ScheduleResponse mapToResponse(Schedule schedule) {
+        return ScheduleResponse.builder()
+                .scheduleId(schedule.getScheduleId())
+                .zoneId(schedule.getZone().getZoneId())
+                .startTime(schedule.getStartTime())
+                .duration(schedule.getDuration())
+                .volume(schedule.getVolume())
+                .repeatDays(schedule.getRepeatDays())
+                .active(schedule.getActive())
+                .createdAt(schedule.getCreatedAt())
+                .updatedAt(schedule.getUpdatedAt())
+                .build();
     }
 }

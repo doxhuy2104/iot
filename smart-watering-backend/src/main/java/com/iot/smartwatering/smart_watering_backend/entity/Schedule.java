@@ -1,12 +1,20 @@
 package com.iot.smartwatering.smart_watering_backend.entity;
 
-import jakarta.persistence.*;
+import java.time.LocalDateTime;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 @Entity
 @Data
@@ -21,12 +29,14 @@ public class Schedule {
     private Long scheduleId;
     @Column(name = "start_time")
     private LocalDateTime startTime;
-    @Column(name = "duration_minutes")
-    private Long durationMinutes;
+    @Column(name = "duration")
+    private Long duration;
     @Column(name = "repeat_days")
     private String repeatDays;
     @Builder.Default
     private Boolean active = true;
+    @Column(name = "volume")
+    private Double volume;
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
     @Column(name = "created_at")
