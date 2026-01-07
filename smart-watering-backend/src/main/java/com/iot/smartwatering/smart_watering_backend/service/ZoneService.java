@@ -137,6 +137,10 @@ public class ZoneService {
             throw new RuntimeException("Zone not found");
         }
         zoneRepository.deleteById(zoneId);
+
+        // Publish deleted status to MQTT
+        String topic = "irrigation/config/zone/" + zoneId;
+        mqttService.publishRetained(topic, "deleted");
     }
 
     private void publishZoneConfig(Zone zone) {

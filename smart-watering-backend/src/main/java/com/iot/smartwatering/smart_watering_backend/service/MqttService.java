@@ -100,4 +100,19 @@ public class MqttService {
             log.error("Error sending raw message to MQTT", e);
         }
     }
+
+    public void publishRetained(String topic, String payload) {
+        try {
+            mqttOutboundChannel.send(
+                    MessageBuilder.withPayload(payload)
+                            .setHeader("mqtt_topic", topic)
+                            .setHeader("mqtt_retained", true)
+                            .build());
+
+            log.info("Published retained message to topic: {} - {}", topic, payload);
+
+        } catch (Exception e) {
+            log.error("Error sending retained message to MQTT", e);
+        }
+    }
 }
