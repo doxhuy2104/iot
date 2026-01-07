@@ -161,21 +161,6 @@ public class ScheduleService {
         Long zoneId = schedule.getZone().getZoneId();
         scheduleRepository.delete(schedule);
 
-        // Publish empty schedule update or specific DELETE event
-        // Sending the ID with "active": false is a good signal if device expects it
-        // Or publish map with action DELETE
-        // To be safe and minimal:
-
-        // mqttService.publishScheduleUpdate(zoneId, Map.of("scheduleId", scheduleId,
-        // "action", "DELETE"));
-        // Since publishScheduleUpdate accepts Object, we can send a small map.
-
-        java.util.Map<String, Object> deleteMessage = new java.util.HashMap<>();
-        deleteMessage.put("scheduleId", scheduleId);
-        deleteMessage.put("action", "DELETE");
-
-        mqttService.publishScheduleUpdate(zoneId, deleteMessage);
-
         // Sync full list of active schedules (excluding the deleted one)
         syncZoneSchedules(zoneId);
     }
