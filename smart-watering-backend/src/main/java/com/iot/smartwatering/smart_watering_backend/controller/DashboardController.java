@@ -6,6 +6,7 @@ import com.iot.smartwatering.smart_watering_backend.repository.DeviceRepository;
 import com.iot.smartwatering.smart_watering_backend.repository.ZoneRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;

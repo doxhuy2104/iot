@@ -5,6 +5,7 @@ import com.iot.smartwatering.smart_watering_backend.dto.request.RegisterRequest;
 import com.iot.smartwatering.smart_watering_backend.dto.response.LoginResponse;
 import com.iot.smartwatering.smart_watering_backend.dto.response.RefreshTokenResponse;
 import com.iot.smartwatering.smart_watering_backend.entity.User;
+import com.iot.smartwatering.smart_watering_backend.enums.UserRole;
 import com.iot.smartwatering.smart_watering_backend.exception.AuthenticationException;
 import com.iot.smartwatering.smart_watering_backend.exception.UserAlreadyExistsException;
 import com.iot.smartwatering.smart_watering_backend.repository.UserRepository;
@@ -48,7 +49,7 @@ public class AuthService {
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(User.UserRole.USER)
+                .role(UserRole.USER)
                 .isActive(true)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())

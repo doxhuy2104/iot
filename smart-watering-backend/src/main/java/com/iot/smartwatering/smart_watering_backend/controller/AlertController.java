@@ -12,6 +12,7 @@ import com.iot.smartwatering.smart_watering_backend.repository.UserRepository;
 import com.iot.smartwatering.smart_watering_backend.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 

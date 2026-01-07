@@ -1,5 +1,6 @@
 package com.iot.smartwatering.smart_watering_backend.entity;
 
+import com.iot.smartwatering.smart_watering_backend.enums.UserRole;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -52,7 +53,4 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Notification> notifications = new HashSet<>();
-    public enum UserRole {
-        USER, ADMIN
-    }
 }
