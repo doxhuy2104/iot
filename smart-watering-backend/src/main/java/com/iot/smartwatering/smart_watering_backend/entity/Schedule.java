@@ -28,7 +28,7 @@ public class Schedule {
     @Column(name = "schedule_id")
     private Long scheduleId;
     @Column(name = "start_time")
-    private LocalDateTime startTime;
+    private java.time.LocalTime startTime;
     @Column(name = "duration")
     private Long duration;
     @Column(name = "repeat_days")

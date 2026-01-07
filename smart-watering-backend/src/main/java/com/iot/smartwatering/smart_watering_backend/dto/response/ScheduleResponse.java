@@ -10,7 +10,7 @@ import lombok.Data;
 public class ScheduleResponse {
     private Long scheduleId;
     private Long zoneId;
-    private LocalDateTime startTime;
+    private java.time.LocalTime startTime;
     private Long duration;
     private String repeatDays;
     private Double volume;

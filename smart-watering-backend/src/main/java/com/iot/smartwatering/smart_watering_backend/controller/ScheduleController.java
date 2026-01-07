@@ -57,4 +57,10 @@ public class ScheduleController {
         ScheduleResponse schedule = scheduleService.toggleScheduleActive(scheduleId, active);
         return ResponseEntity.ok(ApiResponse.success("Schedule updated successfully", schedule));
     }
+
+    @PostMapping("/zone/{zoneId}/sync")
+    public ResponseEntity<ApiResponse<Void>> syncSchedules(@PathVariable Long zoneId) {
+        scheduleService.syncZoneSchedules(zoneId);
+        return ResponseEntity.ok(ApiResponse.success("Schedules synced successfully", null));
+    }
 }

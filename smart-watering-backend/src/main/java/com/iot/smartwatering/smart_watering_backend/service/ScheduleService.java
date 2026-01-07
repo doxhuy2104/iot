@@ -57,7 +57,7 @@ public class ScheduleService {
             return false;
 
         // Extract time from schedule start time
-        LocalTime scheduleTime = schedule.getStartTime().toLocalTime().truncatedTo(ChronoUnit.MINUTES);
+        LocalTime scheduleTime = schedule.getStartTime().truncatedTo(ChronoUnit.MINUTES);
 
         // Check if times match (ignoring seconds)
         if (!currentTime.equals(scheduleTime)) {
@@ -67,8 +67,8 @@ public class ScheduleService {
         String repeatDays = schedule.getRepeatDays();
 
         if (repeatDays == null || repeatDays.trim().isEmpty()) {
-            // Non-repeating: Check if the date matches today
-            return schedule.getStartTime().toLocalDate().isEqual(LocalDateTime.now().toLocalDate());
+            // Non-repeating or generic: If no days specified, assume it runs daily
+            return true;
         } else {
             // Repeating: Check if today is in the repeat days
             // Formats could be "MONDAY,TUESDAY" or "Mon,Tue" etc.
@@ -100,8 +100,7 @@ public class ScheduleService {
 
         Schedule schedule = Schedule.builder()
                 .zone(zone)
-                .startTime(LocalDateTime.of(java.time.LocalDate.now(), request.getStartTime())) // ScheduleRequest has
-                                                                                                // LocalTime?
+                .startTime(request.getStartTime())
                 .duration(Long.valueOf(request.getDuration()))
                 .volume(request.getVolume())
                 .repeatDays(request.getRepeatDays())
@@ -120,11 +119,27 @@ public class ScheduleService {
 
         schedule = scheduleRepository.save(schedule);
 
-        // Publish to MQTT
-        ScheduleResponse response = mapToResponse(schedule);
-        mqttService.publishScheduleUpdate(zone.getZoneId(), response);
+        // Create custom payload: list of simplified schedule objects
+        syncZoneSchedules(zone.getZoneId());
 
+        ScheduleResponse response = mapToResponse(schedule);
         return response;
+    }
+
+    public void syncZoneSchedules(Long zoneId) {
+        List<Schedule> activeSchedules = scheduleRepository.findByZone_ZoneIdAndActiveTrue(zoneId);
+
+        List<java.util.Map<String, Object>> payload = activeSchedules.stream().map(s -> {
+            java.util.Map<String, Object> map = new java.util.HashMap<>();
+            // Format time as HH:mm
+            map.put("startTime", s.getStartTime().toString());
+            map.put("duration", s.getDuration());
+            map.put("repeatDays", s.getRepeatDays());
+            map.put("volume", s.getVolume());
+            return map;
+        }).toList();
+
+        mqttService.publishScheduleUpdate(zoneId, payload);
     }
 
     @Transactional(readOnly = true)
@@ -160,6 +175,9 @@ public class ScheduleService {
         deleteMessage.put("action", "DELETE");
 
         mqttService.publishScheduleUpdate(zoneId, deleteMessage);
+
+        // Sync full list of active schedules (excluding the deleted one)
+        syncZoneSchedules(zoneId);
     }
 
     @Transactional
@@ -170,10 +188,10 @@ public class ScheduleService {
         schedule.setActive(active);
         schedule = scheduleRepository.save(schedule);
 
-        ScheduleResponse response = mapToResponse(schedule);
-        mqttService.publishScheduleUpdate(schedule.getZone().getZoneId(), response);
+        // Sync full list of active schedules
+        syncZoneSchedules(schedule.getZone().getZoneId());
 
-        return response;
+        return mapToResponse(schedule);
     }
 
     private ScheduleResponse mapToResponse(Schedule schedule) {
