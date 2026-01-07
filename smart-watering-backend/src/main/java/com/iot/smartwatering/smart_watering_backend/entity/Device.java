@@ -20,7 +20,9 @@ import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 @Entity
 @Data
@@ -51,18 +53,26 @@ public class Device {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "zone_id", nullable = false, unique = true)
     private Zone zone;
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<SensorData> sensorData = new HashSet<>();
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<FlowData> flowData = new HashSet<>();
 
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @OneToMany(mappedBy = "device", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<WaterLog> waterLog = new HashSet<>();
