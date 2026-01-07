@@ -17,7 +17,34 @@ const fetchApi = async (url, options = {}) => {
     headers,
   });
 
-  const data = await response.json();
+  // Safely parse JSON response - handle empty or non-JSON responses
+  let data;
+  const contentType = response.headers.get('content-type');
+  const text = await response.text();
+  
+  if (text && contentType?.includes('application/json')) {
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      // JSON parse failed
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}: ${text || 'No response body'}`);
+      }
+      throw new Error('Invalid JSON response from server');
+    }
+  } else if (text) {
+    // Non-JSON response
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}: ${text}`);
+    }
+    data = { message: text };
+  } else {
+    // Empty response
+    if (!response.ok) {
+      throw new Error(`Request failed with status ${response.status}: Empty response from server`);
+    }
+    data = {};
+  }
   
   if (!response.ok) {
     throw new Error(data.message || `Request failed with status ${response.status}`);
