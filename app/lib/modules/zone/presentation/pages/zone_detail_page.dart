@@ -224,7 +224,18 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                 _currentHumidity = (humidity as num).toDouble();
               }
               if (pumpStatus != null) {
+                bool wasWatering = _isWatering;
                 _isWatering = pumpStatus == 'on';
+                if (wasWatering && !_isWatering) {
+                  // Watering finished, refresh logs and zone detail
+                  // Add a small delay to ensure backend has processed the data
+                  Future.delayed(const Duration(seconds: 1), () {
+                    if (mounted) {
+                      _getWaterLogs();
+                      // _getZoneDetail();
+                    }
+                  });
+                }
               }
               if (flowRate != null) {
                 _currentFlowRate = (flowRate as num).toDouble();
@@ -615,17 +626,17 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
     required Color color,
   }) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
-        Container(
-          padding: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, color: color, size: 20),
-        ),
-        const SizedBox(width: 12),
+        // Container(
+        //   padding: const EdgeInsets.all(8),
+        //   decoration: BoxDecoration(
+        //     color: color.withOpacity(0.1),
+        //     shape: BoxShape.circle,
+        //   ),
+        //   child: Icon(icon, color: color, size: 20),
+        // ),
+        // const SizedBox(width: 12),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -648,6 +659,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
   }
 
   Widget _buildFlowInfoCard() {
+    // Utils.debugLog(_currentVolume);
     return Card(
       color: Colors.white,
       elevation: 2,
@@ -676,7 +688,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                   width: 1,
                   height: 40,
                   color: Colors.grey.withOpacity(0.2),
-                ),
+                ).paddingSymmetric(h: 8),
                 Expanded(
                   child: _buildUsageItem(
                     icon: Icons.water_drop,
@@ -813,7 +825,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             const Text(
-              'Upcoming Schedules',
+              'Schedules',
               style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             TextButton.icon(
@@ -834,10 +846,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
         const SizedBox(height: 8),
 
         if (_schedules.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Center(child: Text("No upcoming schedules")),
-          )
+          const Padding(padding: EdgeInsets.all(0), child: Text("No schedules"))
         else
           ..._schedules.map(
             (schedule) => Card(

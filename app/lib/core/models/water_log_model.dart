@@ -124,7 +124,8 @@ class WaterLogModel extends Equatable {
     final double? waterVolumeLiters =
         (mapData['water_volume_liters'] ??
                 mapData['water_volume_l'] ??
-                mapData['waterVolumeLiters'] as num?)
+                mapData['waterVolumeLiters'] ??
+                mapData['volume'] as num?)
             ?.toDouble();
     final WaterLogReason? reason = WaterLogReason.fromString(mapData['reason']);
     final WaterLogStatus? status = WaterLogStatus.fromString(

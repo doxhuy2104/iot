@@ -13,6 +13,7 @@ class ZoneModel extends Equatable {
   final bool? autoMode;
   final bool? weatherMode;
   final String? deviceIdentifier;
+  final double? totalVolume;
   final DateTime? createdAt;
   final DateTime? updatedAt;
 
@@ -29,6 +30,7 @@ class ZoneModel extends Equatable {
     this.autoMode,
     this.weatherMode,
     this.deviceIdentifier,
+    this.totalVolume,
     this.createdAt,
     this.updatedAt,
   });
@@ -53,6 +55,7 @@ class ZoneModel extends Equatable {
     final bool? autoMode = mapData['autoMode'];
     final bool? weatherMode = mapData['weatherMode'];
     final String? deviceIdentifier = mapData['deviceIdentifier'];
+    final double? totalVolume = (mapData['totalVolume'] as num?)?.toDouble();
     final DateTime? createdAt = mapData['createdAt'] != null
         ? (mapData['createdAt'] is DateTime
               ? mapData['createdAt']
@@ -77,6 +80,7 @@ class ZoneModel extends Equatable {
       autoMode: autoMode,
       weatherMode: weatherMode,
       deviceIdentifier: deviceIdentifier,
+      totalVolume: totalVolume,
       createdAt: createdAt,
       updatedAt: updatedAt,
     );
@@ -95,6 +99,7 @@ class ZoneModel extends Equatable {
     'autoMode': autoMode,
     'weatherMode': weatherMode,
     'deviceIdentifier': deviceIdentifier,
+    'totalVolume': totalVolume,
     'createdAt': createdAt?.toIso8601String(),
     'updatedAt': updatedAt?.toIso8601String(),
   };
@@ -112,6 +117,7 @@ class ZoneModel extends Equatable {
     bool? autoMode,
     bool? weatherMode,
     String? deviceIdentifier,
+    double? totalVolume,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -128,6 +134,7 @@ class ZoneModel extends Equatable {
       autoMode: autoMode ?? this.autoMode,
       weatherMode: weatherMode ?? this.weatherMode,
       deviceIdentifier: deviceIdentifier ?? this.deviceIdentifier,
+      totalVolume: totalVolume ?? this.totalVolume,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -147,12 +154,13 @@ class ZoneModel extends Equatable {
     autoMode,
     weatherMode,
     deviceIdentifier,
+    totalVolume,
     createdAt,
     updatedAt,
   ];
 
   @override
   String toString() {
-    return 'Zone(zoneId: $zoneId, userId: $userId, zoneName: $zoneName, location: $location, description: $description, longitude: $longitude, latitude: $latitude, thresholdMin: $thresholdMin, thresholdMax: $thresholdMax, autoMode: $autoMode, weatherMode: $weatherMode, deviceIdentifier: $deviceIdentifier, createdAt: $createdAt, updatedAt: $updatedAt)';
+    return 'Zone(zoneId: $zoneId, userId: $userId, zoneName: $zoneName, location: $location, description: $description, longitude: $longitude, latitude: $latitude, thresholdMin: $thresholdMin, thresholdMax: $thresholdMax, autoMode: $autoMode, weatherMode: $weatherMode, deviceIdentifier: $deviceIdentifier, totalVolume: $totalVolume, createdAt: $createdAt, updatedAt: $updatedAt)';
   }
 }
