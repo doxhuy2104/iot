@@ -138,6 +138,44 @@ public class ScheduleService {
         // .collect(Collectors.toList())
     }
 
+    @Transactional
+    public void deleteSchedule(Long scheduleId) {
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+
+        Long zoneId = schedule.getZone().getZoneId();
+        scheduleRepository.delete(schedule);
+
+        // Publish empty schedule update or specific DELETE event
+        // Sending the ID with "active": false is a good signal if device expects it
+        // Or publish map with action DELETE
+        // To be safe and minimal:
+
+        // mqttService.publishScheduleUpdate(zoneId, Map.of("scheduleId", scheduleId,
+        // "action", "DELETE"));
+        // Since publishScheduleUpdate accepts Object, we can send a small map.
+
+        java.util.Map<String, Object> deleteMessage = new java.util.HashMap<>();
+        deleteMessage.put("scheduleId", scheduleId);
+        deleteMessage.put("action", "DELETE");
+
+        mqttService.publishScheduleUpdate(zoneId, deleteMessage);
+    }
+
+    @Transactional
+    public ScheduleResponse toggleScheduleActive(Long scheduleId, boolean active) {
+        Schedule schedule = scheduleRepository.findById(scheduleId)
+                .orElseThrow(() -> new RuntimeException("Schedule not found"));
+
+        schedule.setActive(active);
+        schedule = scheduleRepository.save(schedule);
+
+        ScheduleResponse response = mapToResponse(schedule);
+        mqttService.publishScheduleUpdate(schedule.getZone().getZoneId(), response);
+
+        return response;
+    }
+
     private ScheduleResponse mapToResponse(Schedule schedule) {
         return ScheduleResponse.builder()
                 .scheduleId(schedule.getScheduleId())
