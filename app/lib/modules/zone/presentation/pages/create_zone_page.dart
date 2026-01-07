@@ -288,12 +288,12 @@ class _CreateZonePageState extends State<CreateZonePage> {
                   onChanged: (val) => setState(() => _autoMode = val),
                   activeColor: AppColors.primary,
                 ),
-                // SwitchListTile(
-                //   title: const Text('Weather Mode'),
-                //   value: _weatherMode,
-                //   onChanged: (val) => setState(() => _weatherMode = val),
-                //   activeColor: AppColors.primary,
-                // ),
+                SwitchListTile(
+                  title: const Text('Weather Mode'),
+                  value: _weatherMode,
+                  onChanged: (val) => setState(() => _weatherMode = val),
+                  activeColor: AppColors.primary,
+                ),
                 const SizedBox(height: 16),
                 SizedBox(
                   width: double.infinity,

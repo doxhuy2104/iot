@@ -1,3 +1,4 @@
+import 'package:app/core/models/schedule_model.dart';
 import 'package:app/core/models/water_log_model.dart';
 import 'package:app/core/models/zone_model.dart';
 import 'package:app/core/network/dio_exceptions.dart';
@@ -231,6 +232,98 @@ class ZoneRepository {
         listData.map((e) => WaterLogModel.fromJson(e)),
       );
       return Right(logs);
+    } on DioException catch (e) {
+      final reason = DioExceptions.fromDioError(e).toString();
+      final statusCode = e.response?.statusCode.toString() ?? '';
+      return Left(ApiFailure(reason: reason, statusCode: statusCode));
+    } catch (e) {
+      return Left(ApiFailure(reason: e.toString(), statusCode: '400'));
+    }
+  }
+
+  Future<Either<DioFailure, dynamic>> createSchedule({
+    required int zoneId,
+    required String startTime,
+    required int duration,
+    required double volume,
+    required List<String> repeatDays,
+    bool active = true,
+  }) async {
+    try {
+      final data = {
+        'zoneId': zoneId,
+        'startTime': startTime,
+        'duration': duration, // seconds
+        'volume': volume,
+        'repeatDays': repeatDays.join(','),
+        'active': active,
+      };
+
+      final response = await api.createSchedule(data);
+      return Right(response.data);
+    } on DioException catch (e) {
+      final reason = DioExceptions.fromDioError(e).toString();
+      final statusCode = e.response?.statusCode.toString() ?? '';
+      return Left(ApiFailure(reason: reason, statusCode: statusCode));
+    } catch (e) {
+      return Left(ApiFailure(reason: e.toString(), statusCode: '400'));
+    }
+  }
+
+  Future<Either<DioFailure, List<ScheduleModel>>> getSchedules(
+    int zoneId,
+  ) async {
+    try {
+      final response = await api.getSchedules(zoneId);
+      final responseData = response.data;
+      // Handle generic response wrapper if exists, similar to getZones logic
+      List<dynamic> listData = [];
+      if (responseData is Map<String, dynamic> &&
+          responseData['data'] is List) {
+        listData = responseData['data'];
+      } else if (responseData is List) {
+        listData = responseData;
+      }
+
+      final schedules = List<ScheduleModel>.from(
+        listData.map((e) => ScheduleModel.fromJson(e)),
+      );
+      return Right(schedules);
+    } on DioException catch (e) {
+      final reason = DioExceptions.fromDioError(e).toString();
+      final statusCode = e.response?.statusCode.toString() ?? '';
+      return Left(ApiFailure(reason: reason, statusCode: statusCode));
+    } catch (e) {
+      return Left(ApiFailure(reason: e.toString(), statusCode: '400'));
+    }
+  }
+
+  Future<Either<DioFailure, dynamic>> deleteSchedule(int scheduleId) async {
+    try {
+      final response = await api.deleteSchedule(scheduleId);
+      return Right(response.data);
+    } on DioException catch (e) {
+      final reason = DioExceptions.fromDioError(e).toString();
+      final statusCode = e.response?.statusCode.toString() ?? '';
+      return Left(ApiFailure(reason: reason, statusCode: statusCode));
+    } catch (e) {
+      return Left(ApiFailure(reason: e.toString(), statusCode: '400'));
+    }
+  }
+
+  Future<Either<DioFailure, ScheduleModel>> toggleScheduleActive(
+    int scheduleId,
+    bool active,
+  ) async {
+    try {
+      final response = await api.toggleScheduleActive(scheduleId, active);
+      final responseData = response.data;
+      final mapData = responseData is Map<String, dynamic>
+          ? (responseData['data'] is Map<String, dynamic>
+                ? responseData['data']
+                : responseData)
+          : responseData;
+      return Right(ScheduleModel.fromJson(mapData)!);
     } on DioException catch (e) {
       final reason = DioExceptions.fromDioError(e).toString();
       final statusCode = e.response?.statusCode.toString() ?? '';

@@ -1,6 +1,5 @@
-import 'package:app/core/utils/utils.dart';
-import 'package:dio/dio.dart';
 import 'package:app/core/network/dio_interceptor.dart';
+import 'package:dio/dio.dart';
 
 final class DioClient {
   final String baseUrl;
@@ -27,7 +26,7 @@ final class DioClient {
     Map<String, dynamic>? data,
     Options? options,
     CancelToken? cancelToken,
-    
+
     ProgressCallback? onReceiveProgress,
   }) async {
     try {
@@ -149,6 +148,31 @@ final class DioClient {
         queryParameters: queryParameters,
         options: options,
         cancelToken: cancelToken,
+      );
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> patch(
+    String url, {
+    Object? data,
+    Map<String, dynamic>? queryParameters,
+    Options? options,
+    CancelToken? cancelToken,
+    ProgressCallback? onSendProgress,
+    ProgressCallback? onReceiveProgress,
+  }) async {
+    try {
+      final Response response = await _dio.patch(
+        url,
+        data: data,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+        onSendProgress: onSendProgress,
+        onReceiveProgress: onReceiveProgress,
       );
       return response;
     } catch (e) {

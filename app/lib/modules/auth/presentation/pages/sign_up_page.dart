@@ -17,7 +17,7 @@ import 'package:app/core/helpers/shared_preference_helper.dart';
 import 'package:app/core/utils/utils.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -246,34 +246,35 @@ class _SignUpPageState extends State<SignUpPage> {
                               //   );
                               // }
                               // }
-                            } on FirebaseAuthException catch (e) {
-                              Utils.debugLogError(e.code);
-
-                              switch (e.code) {
-                                case 'email-already-in-use':
-                                  AppDialog.show(
-                                    title: context.localization.emailInUse,
-                                    // message: '',
-                                    type: AppDialogType.failed,
-                                  );
-                                  break;
-                                // case 'weak-password':
-                                //   AppDialog.show(
-                                //     title: '',
-                                //     message: '',
-                                //     type: AppDialogType.failed,
-                                //     confirmText: '',
-                                //   );
-                                //   break;
-                                default:
-                                  AppDialog.show(
-                                    title: context.localization.errorTitle,
-                                    message: e.code,
-                                    type: AppDialogType.failed,
-                                  );
-                                  break;
-                              }
-                            } catch (e) {
+                            }
+                            //  on FirebaseAuthException catch (e) {
+                            //   Utils.debugLogError(e.code);
+                            //   switch (e.code) {
+                            //     case 'email-already-in-use':
+                            //       AppDialog.show(
+                            //         title: context.localization.emailInUse,
+                            //         // message: '',
+                            //         type: AppDialogType.failed,
+                            //       );
+                            //       break;
+                            //     // case 'weak-password':
+                            //     //   AppDialog.show(
+                            //     //     title: '',
+                            //     //     message: '',
+                            //     //     type: AppDialogType.failed,
+                            //     //     confirmText: '',
+                            //     //   );
+                            //     //   break;
+                            //     default:
+                            //       AppDialog.show(
+                            //         title: context.localization.errorTitle,
+                            //         message: e.code,
+                            //         type: AppDialogType.failed,
+                            //       );
+                            //       break;
+                            //   }
+                            // }
+                            catch (e) {
                               Utils.debugLogError(e);
                               AppDialog.show(
                                 title: context.localization.errorTitle,

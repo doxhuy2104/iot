@@ -5,7 +5,9 @@ import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/extensions/localized_extension.dart';
 import 'package:app/core/extensions/num_extension.dart';
+import 'package:app/core/extensions/widget_extension.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
+import 'package:app/core/models/schedule_model.dart';
 import 'package:app/core/models/water_log_model.dart';
 import 'package:app/core/models/zone_model.dart';
 import 'package:app/core/services/mqtt_service.dart';
@@ -41,11 +43,13 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
   // String _selectedMode = 'Manual'; // Manual, Auto, Schedule
   bool _isDeviceOffline = false;
   bool _isWatering = false;
-
+  bool _isEnableTargetHumidity = false;
   // History Logs State
   bool _isLoadingLogs = true;
   List<WaterLogModel> _logs = [];
   String _logError = '';
+
+  List<ScheduleModel> _schedules = [];
 
   @override
   void initState() {
@@ -54,6 +58,68 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
     _connectAndPublishOnline();
     _getZoneDetail();
     _getWaterLogs();
+    _getSchedules();
+  }
+
+  void _getSchedules() async {
+    final result = await Modular.get<ZoneRepository>().getSchedules(
+      widget.zoneId,
+    );
+    if (!mounted) return;
+    result.fold(
+      (l) => Utils.debugLog('Error fetching schedules: ${l.reason}'),
+      (r) => setState(() {
+        _schedules = r;
+      }),
+    );
+  }
+
+  void _deleteSchedule(int scheduleId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Delete Schedule'),
+        content: const Text('Are you sure you want to delete this schedule?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Delete', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      final result = await Modular.get<ZoneRepository>().deleteSchedule(
+        scheduleId,
+      );
+      if (!mounted) return;
+      result.fold(
+        (l) => Utils.showToast('Error deleting schedule: ${l.reason}'),
+        (r) {
+          Utils.showToast('Schedule deleted');
+          _getSchedules();
+        },
+      );
+    }
+  }
+
+  void _toggleSchedule(int scheduleId, bool currentStatus) async {
+    final result = await Modular.get<ZoneRepository>().toggleScheduleActive(
+      scheduleId,
+      !currentStatus,
+    );
+    if (!mounted) return;
+    result.fold(
+      (l) => Utils.showToast('Error updating schedule: ${l.reason}'),
+      (r) {
+        _getSchedules(); // Refresh to update UI with latest state
+      },
+    );
   }
 
   void _getWaterLogs() async {
@@ -208,7 +274,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
   void _startWatering() {
     final Map<String, dynamic> payload = {
       'pump': 'on',
-      'targetHumidity': _targetHumidity,
+      'targetHumidity': _isEnableTargetHumidity ? _targetHumidity : 101,
       'time': DateTime.now().toIso8601String(),
     };
     _mqttService.publish(
@@ -289,66 +355,67 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (_isDeviceOffline) ...[
-                  Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.wifi_off,
-                          size: 64,
-                          color: Colors.grey,
-                        ),
-                        const SizedBox(height: 16),
-                        const Text(
-                          'Device is current offline',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 24),
-                        ElevatedButton.icon(
-                          onPressed: () {
-                            // Navigate to wifi config or add device page
-                            NavigationHelper.push(
-                              '${AppRoutes.moduleZone}${ZoneModuleRoutes.addDevice}',
-                              args: {
-                                'zoneId': _currentZone!.zoneId,
-                                'isConfig': true,
-                              },
-                            );
-                          },
-                          icon: const Icon(Icons.settings, color: Colors.white),
-                          label: const Text(
-                            'Configure WiFi',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.primary,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 24,
-                              vertical: 12,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ] else ...[
-                  _buildSensorMonitoringSection(),
-                  const SizedBox(height: 16),
-                  _buildManualControl(),
-                  const SizedBox(height: 16),
-                  _buildFlowInfoCard(),
-                  const SizedBox(height: 16),
-                  _buildSchedulesSection(),
-                  const SizedBox(height: 16),
-                  _buildHistorySection(),
-                  const SizedBox(height: 16),
-                  _buildDeleteSection(),
-                ],
+                // if (_isDeviceOffline) ...[
+                //   Center(
+                //     child: Column(
+                //       mainAxisAlignment: MainAxisAlignment.center,
+                //       children: [
+                //         const Icon(
+                //           Icons.wifi_off,
+                //           size: 64,
+                //           color: Colors.grey,
+                //         ),
+                //         const SizedBox(height: 16),
+                //         const Text(
+                //           'Device is current offline',
+                //           style: TextStyle(
+                //             fontSize: 18,
+                //             fontWeight: FontWeight.bold,
+                //             color: Colors.grey,
+                //           ),
+                //         ),
+                //         const SizedBox(height: 24),
+                //         ElevatedButton.icon(
+                //           onPressed: () {
+                //             // Navigate to wifi config or add device page
+                //             NavigationHelper.push(
+                //               '${AppRoutes.moduleZone}${ZoneModuleRoutes.addDevice}',
+                //               args: {
+                //                 'zoneId': _currentZone!.zoneId,
+                //                 'isConfig': true,
+                //               },
+                //             );
+                //           },
+                //           icon: const Icon(Icons.settings, color: Colors.white),
+                //           label: const Text(
+                //             'Configure WiFi',
+                //             style: TextStyle(color: Colors.white),
+                //           ),
+                //           style: ElevatedButton.styleFrom(
+                //             backgroundColor: AppColors.primary,
+                //             padding: const EdgeInsets.symmetric(
+                //               horizontal: 24,
+                //               vertical: 12,
+                //             ),
+                //           ),
+                //         ),
+                //       ],
+                //     ),
+                //   ),
+                // ]
+                //  else ...[
+                _buildSensorMonitoringSection(),
+                const SizedBox(height: 16),
+                _buildManualControl(),
+                const SizedBox(height: 16),
+                _buildFlowInfoCard(),
+                const SizedBox(height: 16),
+                _buildSchedulesSection(),
+                const SizedBox(height: 16),
+                _buildHistorySection(),
+                const SizedBox(height: 16),
+                _buildDeleteSection(),
+                // ],
               ],
             ),
           ),
@@ -434,14 +501,14 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  'Real-time Humidity',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.primaryText,
-                  ),
-                ),
+                // const Text(
+                //   'Real-time Humidity',
+                //   style: TextStyle(
+                //     fontSize: 16,
+                //     fontWeight: FontWeight.bold,
+                //     color: AppColors.primaryText,
+                //   ),
+                // ),
                 // Text(
                 //   DateFormat('HH:mm').format(DateTime.now()),
                 //   style: const TextStyle(color: Colors.grey, fontSize: 12),
@@ -484,7 +551,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 20),
             Text(
               'Thresholds: ${_currentZone!.thresholdMin?.toInt() ?? 0}% - ${_currentZone!.thresholdMax?.toInt() ?? 100}%',
               style: const TextStyle(color: Colors.grey),
@@ -642,124 +709,122 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
           8.verticalSpace,
           const Divider(),
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: Column(
+            padding: const EdgeInsets.only(left: 16, top: 8, right: 16),
+            child: Row(
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Target Humidity (%)'),
-                    Text(
-                      '${_targetHumidity.toInt()}%',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Colors.blue,
-                      ),
-                    ),
-                  ],
-                ),
-                Builder(
-                  builder: (context) {
-                    double minVal = _currentHumidity;
-                    if (minVal < 0) minVal = 0;
-                    if (minVal > 100) minVal = 100;
-
-                    double sliderVal = _targetHumidity;
-                    if (sliderVal < minVal) sliderVal = minVal;
-                    if (sliderVal > 100) sliderVal = 100;
-
-                    int divisions = (100 - minVal).floor();
-                    if (divisions <= 0) divisions = 1;
-
-                    return Slider(
-                      value: sliderVal,
-                      min: minVal,
-                      max: 100,
-                      divisions: divisions,
-                      activeColor: Colors.blue,
-                      label: '${sliderVal.toInt()}%',
-                      onChanged: _isWatering
-                          ? null
-                          : (value) {
-                              setState(() {
-                                _targetHumidity = value;
-                              });
-                            },
-                    );
+                Checkbox(
+                  value: _isEnableTargetHumidity && !_isWatering,
+                  onChanged: (value) {
+                    setState(() {
+                      _isEnableTargetHumidity = value!;
+                    });
                   },
                 ),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      // _bloc.add(
-                      //   UpdateZoneEvent(
-                      //     zoneId: _currentZone!.zoneId!,
-                      //     pumpStatus: true,
-                      //     thresholdMax: _targetHumidity,
-                      //   ),
-                      // );
-                      _isWatering ? _stopWatering() : _startWatering();
-                    },
-
-                    // icon: const Icon(Icons.water_drop),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                Expanded(
+                  child: Column(
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text('Target Humidity (%)'),
+                          Text(
+                            '${_targetHumidity.toInt()}%',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: _isEnableTargetHumidity
+                                  ? Colors.blue
+                                  : Colors.grey,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    child: Text(
-                      _isWatering ? 'Stop Watering' : 'Start Watering',
-                    ),
+                      Builder(
+                        builder: (context) {
+                          double minVal = _currentHumidity;
+                          if (minVal < 0) minVal = 0;
+                          if (minVal > 100) minVal = 100;
+
+                          double sliderVal = _targetHumidity;
+                          if (sliderVal < minVal) sliderVal = minVal;
+                          if (sliderVal > 100) sliderVal = 100;
+
+                          int divisions = (100 - minVal).floor();
+                          if (divisions <= 0) divisions = 1;
+
+                          return Slider(
+                            value: sliderVal,
+                            min: minVal,
+                            max: 100,
+                            divisions: divisions,
+                            activeColor: Colors.blue,
+                            label: '${sliderVal.toInt()}%',
+                            onChanged: _isWatering || !_isEnableTargetHumidity
+                                ? null
+                                : (value) {
+                                    setState(() {
+                                      _targetHumidity = value;
+                                    });
+                                  },
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
             ),
           ),
+          const Divider(),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () {
+                // _bloc.add(
+                //   UpdateZoneEvent(
+                //     zoneId: _currentZone!.zoneId!,
+                //     pumpStatus: true,
+                //     thresholdMax: _targetHumidity,
+                //   ),
+                // );
+                _isWatering ? _stopWatering() : _startWatering();
+              },
+
+              // icon: const Icon(Icons.water_drop),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              child: Text(_isWatering ? 'Stop Watering' : 'Start Watering'),
+            ),
+          ).paddingSymmetric(h: 16, v: 8),
         ],
       ),
     );
   }
 
   Widget _buildSchedulesSection() {
-    // Mock schedules
-    final List<Map<String, dynamic>> schedules = [
-      {'time': '07:00 AM', 'days': 'Daily', 'isActive': true},
-      {'time': '06:00 PM', 'days': 'Mon, Wed, Fri', 'isActive': false},
-    ];
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            InkWell(
-              onTap: () {
-                NavigationHelper.push(
-                  '${AppRoutes.moduleZone}${ZoneModuleRoutes.schedules}',
-                  args: {'zoneId': _currentZone!.zoneId},
-                );
-              },
-              child: Row(
-                children: const [
-                  Text(
-                    'Upcoming Schedules',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(Icons.arrow_forward_ios, size: 14, color: Colors.grey),
-                ],
-              ),
+            const Text(
+              'Upcoming Schedules',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
             ),
             TextButton.icon(
-              onPressed: () {
-                NavigationHelper.push(
+              onPressed: () async {
+                final result = await NavigationHelper.push(
                   '${AppRoutes.moduleZone}${ZoneModuleRoutes.createSchedule}',
                   args: {'zoneId': _currentZone!.zoneId},
                 );
+                if (result == true) {
+                  _getSchedules();
+                }
               },
               icon: const Icon(Icons.add_circle_outline, size: 16),
               label: const Text('Add'),
@@ -767,33 +832,66 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
           ],
         ),
         const SizedBox(height: 8),
-        ...schedules.map(
-          (schedule) => Card(
-            color: Colors.white,
-            elevation: 1,
-            margin: const EdgeInsets.only(bottom: 10),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: ListTile(
-              leading: Icon(
-                Icons.schedule,
-                color: schedule['isActive'] ? Colors.blue : Colors.grey,
+
+        if (_schedules.isEmpty)
+          const Padding(
+            padding: EdgeInsets.all(16.0),
+            child: Center(child: Text("No upcoming schedules")),
+          )
+        else
+          ..._schedules.map(
+            (schedule) => Card(
+              color: Colors.white,
+              elevation: 1,
+              margin: const EdgeInsets.only(bottom: 10),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-              title: Text(
-                schedule['time'],
-                style: const TextStyle(fontWeight: FontWeight.bold),
-              ),
-              subtitle: Text(schedule['days']),
-              trailing: Switch(
-                value: schedule['isActive'],
-                onChanged: (val) {
-                  // Update schedule status
-                },
+              child: ListTile(
+                title: Text(() {
+                  final raw = schedule.startTime ?? '';
+                  if (raw.isEmpty) return '';
+                  try {
+                    // Try parsing as full DateTime (e.g., 2026-01-07T10:54:00)
+                    final dt = DateTime.tryParse(raw);
+                    if (dt != null) {
+                      return DateFormat('HH:mm').format(dt);
+                    }
+                    // If not a full date, assume it's a time string
+                    // Check if it has seconds (HH:mm:ss) or just HH:mm
+                    final parts = raw.split(':');
+                    if (parts.length >= 2) {
+                      return '${parts[0]}:${parts[1]}';
+                    }
+                    return raw;
+                  } catch (e) {
+                    return raw;
+                  }
+                }(), style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      schedule.repeatDays != null &&
+                              schedule.repeatDays!.isNotEmpty
+                          ? schedule.repeatDays!.join(', ')
+                          : 'One-time',
+                    ),
+                    Text(
+                      'Duration: ${schedule.duration}s - Volume: ${schedule.volume}L',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                trailing: Switch(
+                  value: schedule.active ?? false,
+                  onChanged: (val) =>
+                      _toggleSchedule(schedule.id!, schedule.active ?? false),
+                ),
+                onLongPress: () => _deleteSchedule(schedule.id!),
               ),
             ),
           ),
-        ),
       ],
     );
   }
@@ -968,6 +1066,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
       text: (_currentZone!.thresholdMax ?? 100).round().toString(),
     );
     bool currentAutoMode = _currentZone!.autoMode ?? false;
+    bool currentWeatherMode = _currentZone!.weatherMode ?? false;
 
     showDialog(
       context: context,
@@ -1082,6 +1181,16 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                     },
                     activeColor: AppColors.primary,
                   ),
+                  SwitchListTile(
+                    title: const Text('Weather Mode'),
+                    value: currentWeatherMode,
+                    onChanged: (val) {
+                      setState(() {
+                        currentWeatherMode = val;
+                      });
+                    },
+                    activeColor: AppColors.primary,
+                  ),
                 ],
               ),
             );
@@ -1105,6 +1214,7 @@ class _ZoneDetailPageState extends State<ZoneDetailPage>
                   thresholdMin: thresholdMin,
                   thresholdMax: thresholdMax,
                   autoMode: currentAutoMode,
+                  weatherMode: currentWeatherMode,
                 ),
               );
               Navigator.pop(context);

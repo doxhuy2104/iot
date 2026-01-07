@@ -2,7 +2,6 @@ import 'package:app/core/components/app_dialog.dart';
 import 'package:app/core/components/app_indicator.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/constants/app_stores.dart';
-import 'package:app/core/helpers/auth_helper.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
 import 'package:app/core/utils/globals.dart';
@@ -151,13 +150,13 @@ class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
           sharedPreferenceHelper.remove(key: AppStores.kUserUUID);
           emit(state.reset());
 
-          AuthHelper.signOut()
-              .then((value) {
-                Utils.debugLogSuccess('FB Logout success');
-              })
-              .catchError((error) {
-                Utils.debugLogError('FB Logout error: $error');
-              });
+          // AuthHelper.signOut()
+          //     .then((value) {
+          //       Utils.debugLogSuccess('FB Logout success');
+          //     })
+          //     .catchError((error) {
+          //       Utils.debugLogError('FB Logout error: $error');
+          //     });
 
           NavigationHelper.reset(
             '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',

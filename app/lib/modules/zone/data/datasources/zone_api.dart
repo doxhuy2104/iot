@@ -103,4 +103,44 @@ class ZoneApi {
       rethrow;
     }
   }
+
+  Future<Response> createSchedule(Map<String, dynamic> data) async {
+    const String url = '/api/schedules';
+    try {
+      final response = await dioClient.post(url, data: data);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> getSchedules(int zoneId) async {
+    final String url = '/api/schedules/zone/$zoneId';
+    try {
+      final response = await dioClient.get(url);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> deleteSchedule(int scheduleId) async {
+    final String url = '/api/schedules/$scheduleId';
+    try {
+      final response = await dioClient.delete(url);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<Response> toggleScheduleActive(int scheduleId, bool active) async {
+    final String url = '/api/schedules/$scheduleId/active?active=$active';
+    try {
+      final response = await dioClient.patch(url);
+      return response;
+    } catch (e) {
+      rethrow;
+    }
+  }
 }

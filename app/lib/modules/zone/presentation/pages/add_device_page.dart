@@ -148,16 +148,16 @@ class _AddDevicePageState extends State<AddDevicePage> {
                 TextField(
                   controller: ssidController,
                   decoration: const InputDecoration(
-                    labelText: 'Tên WiFi (SSID)',
-                    hintText: 'Nhập tên WiFi nhà bạn',
+                    labelText: 'WiFi SSID',
+                    hintText: 'Enter WiFi SSID',
                   ),
                 ),
                 const SizedBox(height: 16),
                 TextField(
                   controller: passController,
                   decoration: const InputDecoration(
-                    labelText: 'Mật khẩu',
-                    hintText: 'Nhập mật khẩu WiFi',
+                    labelText: 'WiFi Password',
+                    hintText: 'Enter WiFi Password',
                   ),
                   obscureText: false,
                 ),

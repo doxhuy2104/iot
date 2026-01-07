@@ -1,5 +1,4 @@
 import 'package:app/core/components/app_annotated_region.dart';
-import 'package:app/core/components/app_dialog.dart';
 import 'package:app/core/components/app_indicator.dart';
 import 'package:app/core/components/buttons/primary_button.dart';
 import 'package:app/core/components/inputs/text_input.dart';
@@ -11,14 +10,13 @@ import 'package:app/core/constants/app_styles.dart';
 import 'package:app/core/constants/app_validator.dart';
 import 'package:app/core/extensions/localized_extension.dart';
 import 'package:app/core/extensions/num_extension.dart';
-import 'package:app/core/extensions/widget_extension.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
 import 'package:app/core/utils/utils.dart';
 import 'package:app/modules/auth/general/auth_module_routes.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
@@ -121,24 +119,24 @@ class _SignInPageState extends State<SignInPage> {
                       isSecure: true,
                       textInputAction: TextInputAction.done,
                     ),
-                    8.verticalSpace,
-                    Container(
-                      width: double.infinity,
-                      alignment: AlignmentGeometry.centerRight,
-                      child: GestureDetector(
-                        onTap: () {
-                          NavigationHelper.push(
-                            '${AppRoutes.moduleAuth}${AuthModuleRoutes.forgotPassword}',
-                          );
-                        },
-                        child: Text(
-                          context.localization.forgotPassword,
-                          style: Styles.medium.regular.copyWith(
-                            color: AppColors.contentText,
-                          ),
-                        ).paddingSymmetric(v: 4),
-                      ),
-                    ),
+                    // 8.verticalSpace,
+                    // Container(
+                    //   width: double.infinity,
+                    //   alignment: AlignmentGeometry.centerRight,
+                    //   child: GestureDetector(
+                    //     onTap: () {
+                    //       NavigationHelper.push(
+                    //         '${AppRoutes.moduleAuth}${AuthModuleRoutes.forgotPassword}',
+                    //       );
+                    //     },
+                    //     child: Text(
+                    //       context.localization.forgotPassword,
+                    //       style: Styles.medium.regular.copyWith(
+                    //         color: AppColors.contentText,
+                    //       ),
+                    //     ).paddingSymmetric(v: 4),
+                    //   ),
+                    // ),
                     16.verticalSpace,
 
                     SizedBox(
@@ -166,36 +164,38 @@ class _SignInPageState extends State<SignInPage> {
                                   password: _passwordController.text,
                                 ),
                               );
-                            } on FirebaseAuthException catch (e) {
-                              Utils.debugLogError(e.code);
-                              // switch case show e.code: sign-in
-                              switch (e.code) {
-                                case 'invalid-credential':
-                                  AppDialog.show(
-                                    title: context
-                                        .localization
-                                        .invalidEmailOrPassword,
-                                    // message: '',
-                                    type: AppDialogType.failed,
-                                  );
-                                  break;
-                                // case 'account-exists-with-different-credential':
-                                //   AppDialog.show(
-                                //     title: '',
-                                //     message: '',
-                                //     type: AppDialogType.failed,
-                                //     confirmText: '',
-                                //   );
-                                //   break;
-                                default:
-                                  AppDialog.show(
-                                    title: context.localization.errorTitle,
-                                    message: e.code,
-                                    type: AppDialogType.failed,
-                                  );
-                                  break;
-                              }
-                            } catch (e) {
+                            }
+                            // on FirebaseAuthException catch (e) {
+                            //   Utils.debugLogError(e.code);
+                            //   // switch case show e.code: sign-in
+                            //   switch (e.code) {
+                            //     case 'invalid-credential':
+                            //       AppDialog.show(
+                            //         title: context
+                            //             .localization
+                            //             .invalidEmailOrPassword,
+                            //         // message: '',
+                            //         type: AppDialogType.failed,
+                            //       );
+                            //       break;
+                            //     // case 'account-exists-with-different-credential':
+                            //     //   AppDialog.show(
+                            //     //     title: '',
+                            //     //     message: '',
+                            //     //     type: AppDialogType.failed,
+                            //     //     confirmText: '',
+                            //     //   );
+                            //     //   break;
+                            //     default:
+                            //       AppDialog.show(
+                            //         title: context.localization.errorTitle,
+                            //         message: e.code,
+                            //         type: AppDialogType.failed,
+                            //       );
+                            //       break;
+                            //   }
+                            // }
+                            catch (e) {
                               Utils.debugLogError(e);
                               AppIndicator.hide();
                             } finally {

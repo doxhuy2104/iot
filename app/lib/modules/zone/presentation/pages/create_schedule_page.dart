@@ -1,6 +1,10 @@
+import 'package:app/core/components/inputs/text_input.dart';
 import 'package:app/core/constants/app_colors.dart';
+import 'package:app/modules/zone/data/repositories/zone_repository.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:intl/intl.dart';
 
 class CreateSchedulePage extends StatefulWidget {
   final int zoneId;
@@ -14,10 +18,11 @@ class CreateSchedulePage extends StatefulWidget {
 
 class _CreateSchedulePageState extends State<CreateSchedulePage> {
   late TimeOfDay _selectedTime;
-  double _duration = 10.0;
   bool _isRecurring = true;
   final List<String> _daysOfWeek = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
   final List<bool> _selectedDays = List.filled(7, false);
+  final _durationController = TextEditingController(text: '30');
+  final _volumeController = TextEditingController(text: '5');
 
   @override
   void initState() {
@@ -52,7 +57,38 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
           children: [
             _buildTimePicker(),
             const SizedBox(height: 24),
-            _buildDurationSlider(),
+            const SizedBox(height: 24),
+            const Text(
+              'Duration',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextInput(
+              controller: _durationController,
+              placeholder: 'Duration (s)',
+              keyboardType: TextInputType.number,
+            ),
+            const SizedBox(height: 24),
+            const Text(
+              'Volume',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primaryText,
+              ),
+            ),
+            const SizedBox(height: 8),
+            TextInput(
+              controller: _volumeController,
+              placeholder: 'Volume (L)',
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+              ),
+            ),
             const SizedBox(height: 24),
             _buildFrequencySelector(),
             const SizedBox(height: 40),
@@ -60,13 +96,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
               width: double.infinity,
               height: 50,
               child: ElevatedButton(
-                onPressed: () {
-                  // Save logic here
-                  Navigator.pop(
-                    context,
-                    true,
-                  ); // Return true to indicate reload
-                },
+                onPressed: _saveSchedule,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppColors.primary,
                   foregroundColor: Colors.white,
@@ -117,6 +147,7 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
             height: 150,
             child: CupertinoDatePicker(
               mode: CupertinoDatePickerMode.time,
+              use24hFormat: true,
               initialDateTime: DateTime(
                 2024,
                 1,
@@ -127,71 +158,6 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
               onDateTimeChanged: (DateTime newTime) {
                 setState(() {
                   _selectedTime = TimeOfDay.fromDateTime(newTime);
-                });
-              },
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildDurationSlider() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Text(
-                'Duration',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primaryText,
-                ),
-              ),
-              Text(
-                '${_duration.toInt()} mins',
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
-          SliderTheme(
-            data: SliderTheme.of(context).copyWith(
-              activeTrackColor: AppColors.primary,
-              inactiveTrackColor: Colors.grey[200],
-              thumbColor: Colors.white,
-              overlayColor: AppColors.primary.withOpacity(0.2),
-              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 12),
-              trackHeight: 6,
-            ),
-            child: Slider(
-              value: _duration,
-              min: 1,
-              max: 60,
-              divisions: 59,
-              onChanged: (value) {
-                setState(() {
-                  _duration = value;
                 });
               },
             ),
@@ -281,6 +247,66 @@ class _CreateSchedulePageState extends State<CreateSchedulePage> {
           ],
         ],
       ),
+    );
+  }
+
+  Future<void> _saveSchedule() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    final now = DateTime.now();
+    final dt = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      _selectedTime.hour,
+      _selectedTime.minute,
+    );
+    final startTime = DateFormat('HH:mm').format(dt);
+
+    List<String> repeatDays = [];
+    if (_isRecurring) {
+      final days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      for (int i = 0; i < 7; i++) {
+        if (_selectedDays[i]) {
+          repeatDays.add(days[i]);
+        }
+      }
+    }
+
+    final duration = int.tryParse(_durationController.text) ?? 30;
+    final volume = double.tryParse(_volumeController.text) ?? 5.0;
+
+    final result = await Modular.get<ZoneRepository>().createSchedule(
+      zoneId: widget.zoneId,
+      startTime: startTime,
+      duration: duration,
+      volume: volume,
+      repeatDays: repeatDays,
+      active: true,
+    );
+
+    if (mounted) Navigator.pop(context); // Close dialog
+
+    result.fold(
+      (l) {
+        if (mounted) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(l.reason)));
+        }
+      },
+      (r) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Schedule created successfully')),
+          );
+          Navigator.pop(context, true);
+        }
+      },
     );
   }
 }

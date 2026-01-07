@@ -1,8 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:flutter_svg/svg.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import 'package:app/core/components/app_dialog.dart';
 import 'package:app/core/components/buttons/button.dart';
 import 'package:app/core/components/buttons/primary_button.dart';
@@ -10,20 +6,17 @@ import 'package:app/core/components/inputs/text_input.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_dimensions.dart';
 import 'package:app/core/constants/app_icons.dart';
-import 'package:app/core/constants/app_images.dart';
-import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/constants/app_styles.dart';
 import 'package:app/core/constants/app_validator.dart';
 import 'package:app/core/extensions/localized_extension.dart';
 import 'package:app/core/extensions/num_extension.dart';
 import 'package:app/core/extensions/widget_extension.dart';
-import 'package:app/core/helpers/auth_helper.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
 import 'package:app/core/utils/utils.dart';
-import 'package:app/modules/app/general/app_module_routes.dart';
-import 'package:app/modules/app/presentation/bloc/app_bloc.dart';
-import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:flutter_svg/svg.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -118,9 +111,9 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
                         if (process!) {
                           try {
-                            await AuthHelper.sendForgotPasswordEmail(
-                              _emailController.text,
-                            );
+                            // await AuthHelper.sendForgotPasswordEmail(
+                            //   _emailController.text,
+                            // );
 
                             if (mounted) {
                               AppDialog.show(
@@ -128,13 +121,6 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                                 type: AppDialogType.success,
                               );
                             }
-                          } on FirebaseAuthException catch (e) {
-                            Utils.debugLogError(e.code);
-                            AppDialog.show(
-                              title: '',
-                              message: e.code,
-                              type: AppDialogType.failed,
-                            );
                           } catch (e) {
                             Utils.debugLogError(e);
                           }
