@@ -32,15 +32,25 @@ export default function Login() {
       const result = await authApi.login(username, password);
       console.log('Login response:', result);
       
-      // API returns: { success, data: { token, userId, username, email, role } }
-      const { data } = result;
+      // Handle different response formats:
+      // Format 1: { success, data: { token, userId, username, email, role } }
+      // Format 2: { token, userId, username, email, role }
+      const data = result.data || result;
+      
+      // Validate response has required fields
+      if (!data || (!data.token && !data.accessToken)) {
+        console.error('Invalid login response:', result);
+        throw new Error('Server trả về dữ liệu không hợp lệ. Vui lòng thử lại sau.');
+      }
+      
+      const token = data.token || data.accessToken;
       const user = {
-        id: data.userId,
-        username: data.username,
-        email: data.email,
-        role: data.role,
+        id: data.userId || data.id || data.user?.id,
+        username: data.username || data.user?.username || username,
+        email: data.email || data.user?.email || '',
+        role: data.role || data.user?.role || 'USER',
       };
-      login(user, data.token);
+      login(user, token);
       navigate('/dashboard');
     } catch (err) {
       console.error('Login error:', err);
