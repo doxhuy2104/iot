@@ -1,9 +1,9 @@
 package com.iot.smartwatering.smart_watering_backend.dto.request;
 
+import java.time.LocalTime;
+
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-
-import java.time.LocalTime;
 
 @Data
 public class ScheduleRequest {
@@ -14,8 +14,12 @@ public class ScheduleRequest {
     private LocalTime startTime;
 
     @NotNull(message = "Duration không được để trống")
-    private Integer durationMinutes;
+    private Integer duration;
+
+    @NotNull(message = "Volume không được để trống")
+    private Double volume;
 
     private String repeatDays; // "Mon,Tue,Wed,..."
+
     private Boolean active;
 }

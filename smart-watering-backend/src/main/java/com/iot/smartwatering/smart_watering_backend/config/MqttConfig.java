@@ -24,6 +24,10 @@ public class MqttConfig {
     @Value("${mqtt.broker.clientId}")
     private String clientId;
 
+    private String getUniqueClientId() {
+        return clientId + "-" + java.util.UUID.randomUUID().toString().substring(0, 8);
+    }
+
     @Value("${mqtt.broker.username:}")
     private String username;
 
@@ -41,7 +45,16 @@ public class MqttConfig {
         DefaultMqttPahoClientFactory factory = new DefaultMqttPahoClientFactory();
         MqttConnectOptions options = new MqttConnectOptions();
 
-        options.setServerURIs(new String[]{brokerUrl});
+        // Sanitize Broker URL: HiveMQ Cloud (and others) require ssl:// for port 8883
+        String formattedBrokerUrl = brokerUrl;
+        if (brokerUrl != null && brokerUrl.startsWith("tcp://") && brokerUrl.contains(":8883")) {
+            formattedBrokerUrl = brokerUrl.replace("tcp://", "ssl://");
+            System.out
+                    .println("WARNING: Correcting MQTT Broker URL from tcp:// to ssl:// for secure port 8883. New URL: "
+                            + formattedBrokerUrl);
+        }
+
+        options.setServerURIs(new String[] { formattedBrokerUrl });
         options.setCleanSession(true);
         options.setAutomaticReconnect(true);
         options.setConnectionTimeout(10);
@@ -71,11 +84,14 @@ public class MqttConfig {
     // Inbound adapter for receiving messages
     @Bean
     public MessageProducer inbound() {
-        String[] topics = {sensorTopic, statusTopic};
+        String[] topics = { sensorTopic, statusTopic, "irrigation/log/zone/#", "irrigation/check-weather/zone/#" };
 
-        MqttPahoMessageDrivenChannelAdapter adapter =
-                new MqttPahoMessageDrivenChannelAdapter(
-                        clientId + "-inbound", mqttClientFactory(), topics);
+        // Append unique suffix to avoid conflicts if running multiple instances or
+        // quick restarts
+        String uniqueClientId = getUniqueClientId() + "-inbound";
+
+        MqttPahoMessageDrivenChannelAdapter adapter = new MqttPahoMessageDrivenChannelAdapter(
+                uniqueClientId, mqttClientFactory(), topics);
 
         adapter.setCompletionTimeout(5000);
         adapter.setConverter(new DefaultPahoMessageConverter());
@@ -89,8 +105,10 @@ public class MqttConfig {
     @Bean
     @ServiceActivator(inputChannel = "mqttOutboundChannel")
     public MessageHandler mqttOutbound() {
-        MqttPahoMessageHandler messageHandler =
-                new MqttPahoMessageHandler(clientId + "-outbound", mqttClientFactory());
+        // Append unique suffix
+        String uniqueClientId = getUniqueClientId() + "-outbound";
+
+        MqttPahoMessageHandler messageHandler = new MqttPahoMessageHandler(uniqueClientId, mqttClientFactory());
 
         messageHandler.setAsync(true);
         messageHandler.setDefaultTopic("irrigation/control");

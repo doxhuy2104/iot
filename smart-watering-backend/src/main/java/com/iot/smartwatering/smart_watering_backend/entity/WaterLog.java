@@ -26,8 +26,8 @@ public class WaterLog {
     private LocalDateTime endedAt;
     @Column(name = "duration_seconds")
     private Integer durationSeconds;
-    @Column(name = "water_volume_liters")
-    private Double waterVolumeLiters;
+    @Column(name = "volume")
+    private Double volume;
     @Enumerated(EnumType.STRING)
     private WaterReason reason;
     @Enumerated(EnumType.STRING)
