@@ -15,9 +15,21 @@ app.use('/api', createProxyMiddleware({
   target: BACKEND_URL,
   changeOrigin: true,
   secure: true,
+  headers: {
+    // Set origin to backend's own origin to bypass CORS check
+    'Origin': BACKEND_URL,
+  },
   onProxyReq: (proxyReq, req, res) => {
-    // Remove origin header to avoid CORS issues
+    // Remove headers that trigger CORS checks
     proxyReq.removeHeader('origin');
+    proxyReq.removeHeader('referer');
+    // Set host to target host
+    proxyReq.setHeader('Host', new URL(BACKEND_URL).host);
+  },
+  onProxyRes: (proxyRes, req, res) => {
+    // Remove CORS headers from response since we're proxying
+    delete proxyRes.headers['access-control-allow-origin'];
+    delete proxyRes.headers['access-control-allow-credentials'];
   },
   onError: (err, req, res) => {
     console.error('Proxy error:', err);
