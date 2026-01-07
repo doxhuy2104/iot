@@ -26,17 +26,15 @@ class NavigationHelper {
     await Modular.to.pushNamed(route);
   }
 
-  static void push(
+  static Future<dynamic> push(
     String route, {
     Map<String, dynamic> args = const {'': null},
-  }) {
-    Modular.to.pushNamed(route, arguments: args);
-    // AppKeys.navigatorKey.currentState?.pushNamed(route, arguments: args);
-    // Navigator.pushNamed(
-    //   context ?? AppKeys.navigatorKey.currentContext!,
-    //   route,
-    //   arguments: args,
-    // );
+  }) async {
+    return await Modular.to.pushNamed(route, arguments: args);
+  }
+
+  static Future<dynamic> pushNamed(String route, {Object? arguments}) async {
+    return await Modular.to.pushNamed(route, arguments: arguments);
   }
 
   /// navigate replace

@@ -30,7 +30,7 @@ class AppValidator {
       return false;
     }
 
-    if (value.trim().length < 8) {
+    if (value.trim().length < 3) {
       return false;
     }
     return true;

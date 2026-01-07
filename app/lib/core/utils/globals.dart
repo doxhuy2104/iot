@@ -1,3 +1,4 @@
+import 'package:location/location.dart';
 
 final class Globals {
   Globals._();
@@ -7,4 +8,6 @@ final class Globals {
   static String? globalFcmToken;
   static String? globalUserId;
   static String? globalUserUUID;
+  static String? globalRefreshToken;
+  static LocationData? globalLocation;
 }

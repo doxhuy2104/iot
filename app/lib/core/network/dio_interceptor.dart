@@ -1,12 +1,14 @@
 import 'dart:convert';
 
-import 'package:dio/dio.dart';
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:app/core/constants/app_keys.dart';
+import 'package:app/core/constants/app_routes.dart';
+import 'package:app/core/constants/app_stores.dart';
 import 'package:app/core/helpers/general_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
 import 'package:app/core/utils/globals.dart';
 import 'package:app/core/utils/utils.dart';
+import 'package:app/modules/auth/general/auth_module_routes.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 class DioInterceptor extends Interceptor {
   final _sharedPreferenceHelper = Modular.get<SharedPreferenceHelper>();
@@ -38,7 +40,8 @@ class DioInterceptor extends Interceptor {
 
     if (options.extra['noAuth'] != true) {
       if (Globals.globalAccessToken != null) {
-        options.headers['Authorization'] = '${Globals.globalAccessToken}';
+        options.headers['Authorization'] =
+            'Bearer ${Globals.globalAccessToken}';
       }
     }
 
@@ -56,8 +59,9 @@ class DioInterceptor extends Interceptor {
 
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
+    final fullUrl = response.requestOptions.uri.toString();
     Utils.debugLogSuccess(
-      '${response.requestOptions.method} ${response.requestOptions.path} body:${response.requestOptions.data} query:${response.requestOptions.queryParameters}',
+      '${response.requestOptions.method} $fullUrl (baseUrl: ${response.requestOptions.baseUrl}, path: ${response.requestOptions.path}) body:${response.requestOptions.data} query:${response.requestOptions.queryParameters}',
     );
     // emit to logs
     try {
@@ -114,7 +118,7 @@ class DioInterceptor extends Interceptor {
         // final errorStr =
         //     mapData['reason'] ??
         //     mapData['message'] ??
-            // AppKeys.navigatorKey.currentContext?.localization.unknown_error;
+        // AppKeys.navigatorKey.currentContext?.localization.unknown_error;
 
         // AppDialog.show(
         //   title:
@@ -130,9 +134,10 @@ class DioInterceptor extends Interceptor {
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) {
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    final fullUrl = err.requestOptions.uri.toString();
     Utils.debugLogError(
-      '${err.requestOptions.method} ${err.requestOptions.path} body:${err.requestOptions.data} query:${err.requestOptions.queryParameters} status:${err.response?.statusCode?.toString()} error:${err.response?.data}',
+      '${err.requestOptions.method} $fullUrl (baseUrl: ${err.requestOptions.baseUrl}, path: ${err.requestOptions.path}) body:${err.requestOptions.data} query:${err.requestOptions.queryParameters} status:${err.response?.statusCode?.toString()} error:${err.response?.data}',
     );
 
     try {
@@ -172,7 +177,7 @@ class DioInterceptor extends Interceptor {
       Utils.debugLogError('Log error: $e');
     }
 
-    if (err.response?.data?['type'] == 'DIALOG') {
+    if (err.response?.data is Map && err.response?.data['type'] == 'DIALOG') {
       final json = err.response?.data;
 
       // AppDialog.showFromJson(json);
@@ -196,11 +201,80 @@ class DioInterceptor extends Interceptor {
 
     // check if 401 or 403, remove token and navigate to login
     if (err.response?.statusCode == 401 || err.response?.statusCode == 403) {
+      Utils.debugLog('DioInterceptor: Caught ${err.response?.statusCode}');
+      if (err.requestOptions.path.contains('/auth/refresh-token')) {
+        Utils.debugLogError('DioInterceptor: Refresh token failed (in loop)');
+        _handleExpiredSession();
+        return handler.reject(err);
+      }
+
+      final refreshToken = Globals.globalRefreshToken;
+      Utils.debugLog(
+        'DioInterceptor: refreshToken available: ${refreshToken != null}',
+      );
+
+      if (refreshToken != null) {
+        try {
+          Utils.debugLog('DioInterceptor: Attempting to refresh token...');
+          final response = await dio.post(
+            '/api/auth/refresh-token',
+            data: {'refreshToken': refreshToken},
+            options: Options(extra: {'noAuth': true, 'notShowError': true}),
+          );
+
+          if (response.statusCode == 200) {
+            var mapData = response.data;
+            // Check if data is wrapped in 'data' field
+            if (mapData['data'] != null && mapData['data'] is Map) {
+              mapData = mapData['data'];
+            }
+
+            final newToken = mapData['token'] ?? mapData['accessToken'];
+            final newRefreshToken = mapData['refreshToken'];
+            final tokenType =
+                mapData['tokenType'] ?? mapData['type'] ?? 'Bearer';
+
+            if (newToken != null) {
+              Globals.globalAccessToken = newToken;
+              _sharedPreferenceHelper.set(
+                key: AppStores.kAccessToken,
+                value: newToken,
+              );
+
+              if (newRefreshToken != null) {
+                Globals.globalRefreshToken = newRefreshToken;
+                _sharedPreferenceHelper.set(
+                  key: AppStores.kRefreshToken,
+                  value: newRefreshToken,
+                );
+              }
+
+              err.requestOptions.headers['Authorization'] =
+                  '$tokenType $newToken';
+
+              final retryResponse = await dio.fetch(err.requestOptions);
+              return handler.resolve(retryResponse);
+            }
+          }
+        } catch (e) {
+          Utils.debugLogError('Refresh token failed: $e');
+        }
+      }
+
       Utils.debugLogError('Unauthorized');
+      _handleExpiredSession();
       // AuthBloc authBloc = Modular.get<AuthBloc>();
       // authBloc.add(AuthLogoutRequested(forceLogout: true));
     }
 
     return handler.reject(err);
+  }
+
+  void _handleExpiredSession() {
+    Globals.globalAccessToken = null;
+    Globals.globalRefreshToken = null;
+    _sharedPreferenceHelper.remove(key: AppStores.kAccessToken);
+    _sharedPreferenceHelper.remove(key: AppStores.kRefreshToken);
+    Modular.to.navigate('${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}');
   }
 }

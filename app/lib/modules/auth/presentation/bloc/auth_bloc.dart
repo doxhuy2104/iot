@@ -1,11 +1,9 @@
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:hydrated_bloc/hydrated_bloc.dart';
+import 'package:app/core/components/app_dialog.dart';
+import 'package:app/core/components/app_indicator.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/constants/app_stores.dart';
-import 'package:app/core/helpers/auth_helper.dart';
 import 'package:app/core/helpers/navigation_helper.dart';
 import 'package:app/core/helpers/shared_preference_helper.dart';
-import 'package:app/core/models/user_model.dart';
 import 'package:app/core/utils/globals.dart';
 import 'package:app/core/utils/utils.dart';
 import 'package:app/modules/app/general/app_module_routes.dart';
@@ -13,6 +11,8 @@ import 'package:app/modules/auth/data/repositories/auth_repository.dart';
 import 'package:app/modules/auth/general/auth_module_routes.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
 import 'package:app/modules/auth/presentation/bloc/auth_state.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:hydrated_bloc/hydrated_bloc.dart';
 
 class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
   final AuthRepository repository;
@@ -21,50 +21,142 @@ class AuthBloc extends HydratedBloc<AuthEvent, AuthState> {
   AuthBloc({required this.repository}) : super(const AuthState.initial()) {
     on<AuthEvent>((event, emit) async {
       if (event is SignInRequest) {
-        // final rt = await repository.login(username: event.username);
-        // rt.fold(
-        //   (l) {
-        //     Utils.debugLog(l.reason);
-        //   },
-        //   (r) {
-        final user = UserModel(
-          email: event.type == 'EMAIL' ? event.email : null,
-          accessToken: event.token,
+        final rt = await repository.login(
+          username: event.username,
+          password: event.password,
         );
-        Globals.globalAccessToken = user.accessToken;
-        Globals.globalUserId = user.userId.toString();
-        sharedPreferenceHelper.set(
-          key: AppStores.kAccessToken,
-          value: user.accessToken!,
+        rt.fold(
+          (l) {
+            AppIndicator.hide();
+            Utils.debugLog(l.reason);
+          },
+          (r) {
+            // final user = UserModel(
+            //   email: event.type == 'EMAIL' ? event.email : null,
+            //   accessToken: event.token,
+            // );
+            Globals.globalAccessToken = r.token;
+            Globals.globalUserId = r.userId.toString();
+            Globals.globalRefreshToken = r.refreshToken; // New
+            sharedPreferenceHelper.set(
+              key: AppStores.kAccessToken,
+              value: r.token!,
+            );
+            sharedPreferenceHelper.set(
+              key: AppStores.kRefreshToken, // New
+              value: r.refreshToken!, // New
+            );
+            sharedPreferenceHelper.set(
+              key: AppStores.kUserId,
+              value: r.userId.toString(),
+            );
+            sharedPreferenceHelper.set(
+              key: AppStores.kPassword,
+              value: event.password,
+            );
+            Utils.debugLog(r);
+            emit(state.setState(user: r));
+            AppIndicator.hide();
+            NavigationHelper.replace(
+              '${AppRoutes.moduleApp}${AppModuleRoutes.main}',
+            );
+          },
         );
-        sharedPreferenceHelper.set(
-          key: AppStores.kUserId,
-          value: user.userId.toString(),
+      } else if (event is SignUpRequest) {
+        final rt = await repository.register(
+          username: event.username,
+          email: event.email,
+          password: event.password,
         );
-        Utils.debugLog(user);
-        emit(state.setState(user: user));
-        NavigationHelper.replace(
-          '${AppRoutes.moduleApp}${AppModuleRoutes.main}',
+        rt.fold(
+          (l) {
+            Utils.debugLog(l.reason);
+            AppIndicator.hide();
+          },
+          (r) {
+            emit(state.setState(email: event.email));
+            // NavigationHelper.replace(
+            //   '${AppRoutes.moduleApp}${AppModuleRoutes.main}',
+            // );
+            AppIndicator.hide();
+            AppDialog.show(
+              title: 'Đăng ký thành công',
+              message: 'Vui lòng đăng nhập để tiếp tục',
+              confirmText: 'Đăng nhập',
+              onConfirm: () {
+                NavigationHelper.replace(
+                  '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
+                );
+              },
+            );
+          },
         );
-        // },
-        // );
+      } else if (event is RefreshTokenRequested) {
+        final rt = await repository.refreshToken(event.refreshToken);
+        rt.fold(
+          (l) {
+            Utils.debugLog(l.reason);
+            // If refresh fails on main widget start, force logout
+            add(const SignOutRequest());
+          },
+          (r) {
+            // r is Map<String, dynamic> here
+            final newToken =
+                r['token'] ?? r['accessToken'] ?? r['access_token'];
+            final newRefreshToken = r['refreshToken'];
+            final tokenType = r['tokenType'] ?? r['type'] ?? 'Bearer';
+
+            if (newToken != null) {
+              Globals.globalAccessToken = newToken;
+              sharedPreferenceHelper.set(
+                key: AppStores.kAccessToken,
+                value: newToken,
+              );
+            }
+
+            if (newRefreshToken != null) {
+              Globals.globalRefreshToken = newRefreshToken;
+              sharedPreferenceHelper.set(
+                key: AppStores.kRefreshToken,
+                value: newRefreshToken,
+              );
+            }
+
+            // Merge new tokens with existing user info logic
+            final currentUser = state.user;
+            final updatedUser = currentUser?.copyWith(
+              token: newToken,
+              refreshToken: newRefreshToken,
+              // Maintain existing tokenType or update if returned
+              tokenType: tokenType,
+            );
+
+            if (updatedUser != null) {
+              emit(state.setState(user: updatedUser));
+            }
+
+            Utils.debugLogSuccess('Refresh token success');
+          },
+        );
       } else if (event is SignOutRequest) {
         void forceLogout() {
           Globals.globalAccessToken = null;
           Globals.globalUserId = null;
           Globals.globalUserUUID = null;
+          Globals.globalRefreshToken = null;
           sharedPreferenceHelper.remove(key: AppStores.kAccessToken);
+          sharedPreferenceHelper.remove(key: AppStores.kRefreshToken);
           sharedPreferenceHelper.remove(key: AppStores.kUserId);
           sharedPreferenceHelper.remove(key: AppStores.kUserUUID);
           emit(state.reset());
 
-          AuthHelper.signOut()
-              .then((value) {
-                Utils.debugLogSuccess('FB Logout success');
-              })
-              .catchError((error) {
-                Utils.debugLogError('FB Logout error: $error');
-              });
+          // AuthHelper.signOut()
+          //     .then((value) {
+          //       Utils.debugLogSuccess('FB Logout success');
+          //     })
+          //     .catchError((error) {
+          //       Utils.debugLogError('FB Logout error: $error');
+          //     });
 
           NavigationHelper.reset(
             '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',

@@ -11,4 +11,7 @@ class AppEnvironment {
   // static String get websocketUrl => dotenv.env['WEBSOCKET_URL'] ?? '';
   static String get firebaseWebClientId =>
       dotenv.env['FIREBASE_WEB_CLIENT_ID'] ?? '';
+
+      static String get weatherApiKey =>
+      dotenv.env['WEATHER_API_KEY'] ?? '';
 }

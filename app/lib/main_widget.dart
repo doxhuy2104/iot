@@ -1,9 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:flutter_modular/flutter_modular.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:app/core/constants/app_keys.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/constants/app_stores.dart';
@@ -15,8 +9,11 @@ import 'package:app/core/utils/utils.dart';
 import 'package:app/l10n/app_localizations.dart';
 import 'package:app/modules/app/general/app_module_routes.dart';
 import 'package:app/modules/auth/general/auth_module_routes.dart';
-import 'package:app/modules/auth/presentation/bloc/auth_bloc.dart';
-import 'package:app/modules/auth/presentation/bloc/auth_event.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
+import 'package:location/location.dart';
 
 class MainWidget extends StatefulWidget {
   const MainWidget({super.key});
@@ -28,42 +25,41 @@ class MainWidget extends StatefulWidget {
 class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
   bool _firstLoad = false;
   final sharedPreferenceHelper = Modular.get<SharedPreferenceHelper>();
-  final _authBloc = Modular.get<AuthBloc>();
+
   @override
   void initState() {
     WidgetsBinding.instance.addObserver(this);
     super.initState();
+    _initLocation();
 
     /* always open splash first */
     final accessToken = sharedPreferenceHelper.get(key: AppStores.kAccessToken);
+    final refreshToken = sharedPreferenceHelper.get(
+      key: AppStores.kRefreshToken,
+    );
+
     if (accessToken != null) {
       Modular.setInitialRoute('${AppRoutes.moduleApp}${AppModuleRoutes.main}');
+      Globals.globalAccessToken = accessToken.toString();
+      if (refreshToken != null) {
+        Globals.globalRefreshToken = refreshToken.toString();
+      }
+      Utils.debugLog('AccessToken found: $accessToken');
+      Utils.debugLog('RefreshToken found: ${refreshToken != null}');
 
-      if (FirebaseAuth.instance.currentUser != null) {
-        // check if accessToken is not exp
-        String? accessToken = Globals.globalAccessToken;
+      if (JwtDecoder.isExpired(accessToken.toString())) {
+        Utils.debugLogError('Access token is expired');
+        // Let DioInterceptor handle the refresh on first API call failure (401/403)
+        // to avoid race condition where both MainWidget and DioInterceptor try to refresh
+        // leading to one of them failing due to Refresh Token Rotation.
 
-        if (JwtDecoder.isExpired(accessToken as String)) {
-          Utils.debugLogSuccess('Access token is expired');
-          FirebaseAuth.instance.currentUser?.getIdToken().then((idToken) {
-            Utils.debugLogSuccess('Relogin $idToken');
-            _authBloc.add(
-              SignInRequest(
-                token: idToken!,
-                type: _authBloc.state.user?.loginType,
-                email:
-                    FirebaseAuth.instance.currentUser?.providerData[0].email ??
-                    '',
-              ),
-            );
-          });
-        } else {
-          Utils.debugLogSuccess('Access token is not expired $accessToken');
-          // _authBloc.add(GetDetailUserRequested());
+        if (refreshToken == null) {
+          Modular.setInitialRoute(
+            '${AppRoutes.moduleAuth}${AuthModuleRoutes.signIn}',
+          );
         }
       } else {
-        /* emit logout */
-        // _authBloc.add(AuthLogoutRequested());
+        Utils.debugLogSuccess('Access token is not expired $accessToken');
       }
     } else {
       Modular.setInitialRoute(
@@ -80,6 +76,31 @@ class _MainWidgetState extends State<MainWidget> with WidgetsBindingObserver {
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      final location = Location();
+      bool serviceEnabled = await location.serviceEnabled();
+      if (!serviceEnabled) {
+        serviceEnabled = await location.requestService();
+        if (!serviceEnabled) return;
+      }
+
+      PermissionStatus permissionGranted = await location.hasPermission();
+      if (permissionGranted == PermissionStatus.denied) {
+        permissionGranted = await location.requestPermission();
+        if (permissionGranted != PermissionStatus.granted) return;
+      }
+
+      final locData = await location.getLocation();
+      Globals.globalLocation = locData;
+      Utils.debugLog(
+        'Global Location: ${locData.latitude}, ${locData.longitude}',
+      );
+    } catch (e) {
+      Utils.debugLog('Error getting location: $e');
+    }
   }
 
   @override

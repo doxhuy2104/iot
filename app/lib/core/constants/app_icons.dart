@@ -17,4 +17,6 @@ class AppIcons {
   static const String icClose = '$iconDir/ic_close.svg';
   static const String icSuccessLogo = '$iconDir/ic_success_logo.svg';
   static const String icFailLogo = '$iconDir/ic_fail_logo.svg';
+
+  static const String icRainThunder = '$iconDir/RainThunder.svg';
 }

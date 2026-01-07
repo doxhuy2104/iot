@@ -1,12 +1,9 @@
-import 'dart:ui';
-
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_icons.dart';
 import 'package:app/core/constants/app_styles.dart';
-import 'package:app/core/extensions/widget_extension.dart';
 import 'package:app/core/utils/utils.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class TextInput extends StatefulWidget {
   final TextInputType? keyboardType;
@@ -22,6 +19,8 @@ class TextInput extends StatefulWidget {
   final GlobalKey<FormState>? formKey;
   final TextInputAction? textInputAction;
   final FocusNode? nextFocusNode;
+  final bool readOnly;
+  final Function(String)? onChanged;
   const TextInput({
     super.key,
     this.keyboardType,
@@ -37,6 +36,8 @@ class TextInput extends StatefulWidget {
     this.formKey,
     this.textInputAction,
     this.nextFocusNode,
+    this.readOnly = false,
+    this.onChanged,
   });
 
   @override
@@ -127,7 +128,7 @@ class _TextInputState extends State<TextInput> {
       // crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         ClipRRect(
-          borderRadius: BorderRadiusGeometry.circular(20),
+          borderRadius: BorderRadiusGeometry.circular(44),
           child: GestureDetector(
             onTap: () {
               _focus.requestFocus();
@@ -137,14 +138,14 @@ class _TextInputState extends State<TextInput> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: _errorMessage.isNotEmpty
-                      ? AppColors.fail
-                      : _isFocused
-                      ? AppColors.primary
-                      : AppColors.borderColor,
-                  width: 1,
-                ),
+                // border: Border.all(
+                //   color: _errorMessage.isNotEmpty
+                //       ? AppColors.fail
+                //       : _isFocused
+                //       ? AppColors.primary
+                //       : AppColors.borderColor,
+                //   width: 1,
+                // ),
               ),
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -157,6 +158,7 @@ class _TextInputState extends State<TextInput> {
                   ],
                   Expanded(
                     child: TextFormField(
+                      readOnly: widget.readOnly,
                       controller: widget.controller,
                       textAlignVertical: TextAlignVertical.center,
                       style: Styles.medium.regular,
@@ -179,6 +181,7 @@ class _TextInputState extends State<TextInput> {
                       },
                       focusNode: _focus,
                       onChanged: (value) {
+                        widget.onChanged?.call(value);
                         // widget.validator?.call(value);
                         if (_errorMessage.isNotEmpty) {
                           setState(() {

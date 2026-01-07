@@ -1,18 +1,15 @@
-import 'package:app/modules/zone/presentation/pages/zone_page.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_modular/flutter_modular.dart';
 import 'package:app/core/components/app_annotated_region.dart';
 import 'package:app/core/constants/app_colors.dart';
 import 'package:app/core/constants/app_icons.dart';
 import 'package:app/core/constants/app_routes.dart';
 import 'package:app/core/extensions/localized_extension.dart';
-import 'package:app/modules/app/app_module.dart';
+import 'package:app/modules/account/presentation/pages/account_page.dart';
 import 'package:app/modules/app/general/app_module_routes.dart';
 import 'package:app/modules/app/presentation/components/title_navigation_bar/navigation_bar.dart';
 import 'package:app/modules/app/presentation/components/title_navigation_bar/navigation_bar_item.dart';
-import 'package:app/modules/home/presentation/pages/home_page.dart';
-import 'package:iconsax_flutter/iconsax_flutter.dart';
+import 'package:app/modules/zone/presentation/pages/zone_page.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:preload_page_view/preload_page_view.dart';
 
 class MainPage extends StatefulWidget {
@@ -41,7 +38,7 @@ class _MainPageState extends State<MainPage> {
   }
 
   List<Widget> _pageViews() {
-    return [HomePage(), ZonePage()];
+    return [ZonePage(), AccountPage()];
   }
 
   void navigatePageView(int value) {
@@ -74,7 +71,7 @@ class _MainPageState extends State<MainPage> {
           pageSnapping: true,
           controller: _pageController,
           preloadPagesCount: 2,
-          // physics: const NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           children: _pageViews(),
           onPageChanged: (value) {
             setState(() {
@@ -92,11 +89,11 @@ class _MainPageState extends State<MainPage> {
           indicatorColor: Colors.transparent,
           currentIndex: _currentIndex,
           items: [
-            TitledNavigationBarItem(
-              iconPath: AppIcons.icHomeInactive,
-              activeIconPath: AppIcons.icHomeActive,
-              title: context.localization.home,
-            ),
+            // TitledNavigationBarItem(
+            //   iconPath: AppIcons.icHomeInactive,
+            //   activeIconPath: AppIcons.icHomeActive,
+            //   title: context.localization.home,
+            // ),
             TitledNavigationBarItem(
               icon: Icons.grid_view_outlined,
               activeIcon: Icons.grid_view_sharp,
@@ -107,11 +104,11 @@ class _MainPageState extends State<MainPage> {
               activeIconPath: AppIcons.icAccountActive,
               title: context.localization.account,
             ),
-            TitledNavigationBarItem(
-              iconPath: AppIcons.icAccountInactive,
-              activeIconPath: AppIcons.icAccountActive,
-              title: context.localization.account,
-            ),
+            // TitledNavigationBarItem(
+            //   iconPath: AppIcons.icAccountInactive,
+            //   activeIconPath: AppIcons.icAccountActive,
+            //   title: context.localization.account,
+            // ),
           ],
         ),
       ),
