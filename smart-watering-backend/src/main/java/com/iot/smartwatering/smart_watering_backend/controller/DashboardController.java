@@ -16,6 +16,7 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/dashboard")
 @RequiredArgsConstructor
+@PreAuthorize("hasAnyRole('USER', 'ADMIN')")
 public class DashboardController {
 
     private final ZoneRepository zoneRepository;
