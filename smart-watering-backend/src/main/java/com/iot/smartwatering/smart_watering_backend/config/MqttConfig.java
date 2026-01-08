@@ -84,7 +84,8 @@ public class MqttConfig {
     // Inbound adapter for receiving messages
     @Bean
     public MessageProducer inbound() {
-        String[] topics = { sensorTopic, statusTopic, "irrigation/log/zone/#", "irrigation/check-weather/zone/#" };
+        String[] topics = { sensorTopic, statusTopic, "irrigation/log/zone/#", "irrigation/check-weather/zone/#",
+                "irrigation/status/zone/#" };
 
         // Append unique suffix to avoid conflicts if running multiple instances or
         // quick restarts

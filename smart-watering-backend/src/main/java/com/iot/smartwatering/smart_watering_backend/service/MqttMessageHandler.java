@@ -42,6 +42,7 @@ public class MqttMessageHandler {
     private final WeatherService weatherService;
     private final MqttService mqttService;
 
+    // Modified handleMessage
     @ServiceActivator(inputChannel = "mqttInputChannel")
     @Transactional
     public void handleMessage(Message<?> message) {
@@ -56,7 +57,13 @@ public class MqttMessageHandler {
             } else if (topic.contains("flow")) {
                 handleFlowData(topic, payload);
             } else if (topic.contains("status")) {
-                handleDeviceStatus(topic, payload);
+                // Check if it's the specific zone status topic
+                // (irrigation/status/zone/{zoneId})
+                if (topic.matches("irrigation/status/zone/\\d+")) {
+                    handleZoneDeviceStatus(topic, payload);
+                } else {
+                    handleDeviceStatus(topic, payload);
+                }
             } else if (topic.contains("alert")) {
                 handleAlert(topic, payload);
             } else if (topic.contains("log")) {
@@ -168,6 +175,47 @@ public class MqttMessageHandler {
 
         } catch (Exception e) {
             log.error("Error handling device status", e);
+        }
+    }
+
+    private void handleZoneDeviceStatus(String topic, String payload) {
+        try {
+            // irrigation/status/zone/{zoneId}
+            String[] parts = topic.split("/");
+            String zoneIdStr = parts[parts.length - 1];
+            Long zoneId = Long.parseLong(zoneIdStr);
+
+            String statusStr = payload.trim().toUpperCase();
+
+            // Find device associated with this zone
+            // Since it's OneToOne, we expect one device.
+            java.util.List<Device> devices = deviceRepository.findByZone_ZoneId(zoneId);
+            if (devices.isEmpty()) {
+                log.warn("No device found for zone ID: {}", zoneId);
+                return;
+            }
+
+            Device device = devices.get(0);
+
+            // Map string status to Enum
+            Device.DeviceStatus newStatus;
+            if ("ONLINE".equals(statusStr)) {
+                newStatus = Device.DeviceStatus.ONLINE;
+            } else if ("OFFLINE".equals(statusStr)) {
+                newStatus = Device.DeviceStatus.OFFLINE;
+            } else {
+                log.warn("Unknown status payload: {}", statusStr);
+                return;
+            }
+
+            if (device.getStatus() != newStatus) {
+                device.setStatus(newStatus);
+                deviceRepository.save(device);
+                log.info("Updated status for device {} (Zone {}) to {}", device.getDeviceId(), zoneId, newStatus);
+            }
+
+        } catch (Exception e) {
+            log.error("Error handling zone device status", e);
         }
     }
 
