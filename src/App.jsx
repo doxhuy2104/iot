@@ -15,6 +15,13 @@ import AddSchedule from './pages/zones/AddSchedule';
 import History from './pages/zones/History';
 import Account from './pages/Account';
 
+// Admin Pages
+import AdminDashboard from './pages/admin/AdminDashboard';
+import AdminUsers from './pages/admin/AdminUsers';
+import AdminZones from './pages/admin/AdminZones';
+import AdminDevices from './pages/admin/AdminDevices';
+import AdminAlerts from './pages/admin/AdminAlerts';
+
 // Components
 import Layout from './components/Layout';
 
@@ -40,6 +47,35 @@ function ProtectedRoute({ children }) {
   }
   
   return <Layout>{children}</Layout>;
+}
+
+// Admin Route - only for ADMIN role
+function AdminRoute({ children }) {
+  const { isAuthenticated, user, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div style={{ 
+        minHeight: '100vh', 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'center' 
+      }}>
+        <div className="text-lg">Đang tải...</div>
+      </div>
+    );
+  }
+  
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+  
+  // Check if user has ADMIN role
+  if (user?.role !== 'ADMIN') {
+    return <Navigate to="/dashboard" replace />;
+  }
+  
+  return children;
 }
 
 // Public Route - redirect to dashboard if already logged in
@@ -84,6 +120,13 @@ function AppRoutes() {
       <Route path="/zones/:id/add-schedule" element={<ProtectedRoute><AddSchedule /></ProtectedRoute>} />
       <Route path="/zones/:id/history" element={<ProtectedRoute><History /></ProtectedRoute>} />
       <Route path="/account" element={<ProtectedRoute><Account /></ProtectedRoute>} />
+      
+      {/* Admin Routes - ADMIN role only */}
+      <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+      <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+      <Route path="/admin/zones" element={<AdminRoute><AdminZones /></AdminRoute>} />
+      <Route path="/admin/devices" element={<AdminRoute><AdminDevices /></AdminRoute>} />
+      <Route path="/admin/alerts" element={<AdminRoute><AdminAlerts /></AdminRoute>} />
       
       {/* Default redirect */}
       <Route path="/" element={<Navigate to="/login" replace />} />
