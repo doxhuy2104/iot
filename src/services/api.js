@@ -1,19 +1,29 @@
 // Fetch-based API helper to avoid CORS issues
 // All functions use native fetch with mode: 'same-origin'
 
+// In development, we use Vite proxy (empty base URL)
+// In production, we call the backend directly
+const API_BASE_URL = import.meta.env.PROD 
+  ? import.meta.env.VITE_API_URL 
+  : '';
+
 const getToken = () => localStorage.getItem('token');
 
 const fetchApi = async (url, options = {}) => {
   const token = getToken();
+  const fullUrl = `${API_BASE_URL}${url}`;
+  
   const headers = {
     'Content-Type': 'application/json',
     ...(token && !url.includes('/api/auth/') ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
-  const response = await fetch(url, {
+  const response = await fetch(fullUrl, {
     ...options,
     headers,
+    // In production, we need to allow CORS
+    ...(import.meta.env.PROD && { mode: 'cors' }),
   });
 
   // Safely parse JSON response - handle empty or non-JSON responses

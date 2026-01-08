@@ -1,20 +1,29 @@
 // Admin API Service - connects to backend admin APIs
 // Requires ADMIN role for all endpoints
 
+// In development, we use Vite proxy (empty base URL)
+// In production, we call the backend directly
+const API_BASE_URL = import.meta.env.PROD 
+  ? import.meta.env.VITE_API_URL 
+  : '';
+
 const getToken = () => localStorage.getItem('token');
 
 const fetchApi = async (url, options = {}) => {
   const token = getToken();
+  const fullUrl = `${API_BASE_URL}${url}`;
+  
   const headers = {
     'Content-Type': 'application/json',
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
-  const response = await fetch(url, {
-    mode: 'same-origin',
+  const response = await fetch(fullUrl, {
     ...options,
     headers,
+    // In production, we need to allow CORS
+    ...(import.meta.env.PROD && { mode: 'cors' }),
   });
 
   const data = await response.json();
