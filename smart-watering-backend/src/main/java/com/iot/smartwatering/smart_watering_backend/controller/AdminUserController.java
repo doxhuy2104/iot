@@ -1,20 +1,29 @@
 package com.iot.smartwatering.smart_watering_backend.controller;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.iot.smartwatering.smart_watering_backend.dto.request.UpdateUserRequest;
 import com.iot.smartwatering.smart_watering_backend.dto.response.ApiResponse;
 import com.iot.smartwatering.smart_watering_backend.dto.response.UserResponse;
 import com.iot.smartwatering.smart_watering_backend.entity.User;
 import com.iot.smartwatering.smart_watering_backend.enums.UserRole;
 import com.iot.smartwatering.smart_watering_backend.repository.UserRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.web.bind.annotation.*;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/admin/users")
@@ -79,7 +88,7 @@ public class AdminUserController {
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Long userId,
             @RequestBody UpdateUserRequest request) {
-        
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -88,8 +97,8 @@ public class AdminUserController {
         }
         if (request.getEmail() != null) {
             // Kiểm tra email đã tồn tại
-            if (userRepository.existsByEmail(request.getEmail()) && 
-                !user.getEmail().equals(request.getEmail())) {
+            if (userRepository.existsByEmail(request.getEmail()) &&
+                    !user.getEmail().equals(request.getEmail())) {
                 return ResponseEntity.ok(ApiResponse.error("Email already exists"));
             }
             user.setEmail(request.getEmail());
@@ -103,11 +112,11 @@ public class AdminUserController {
         if (request.getIsActive() != null) {
             user.setIsActive(request.getIsActive());
         }
-        
+
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        return ResponseEntity.ok(ApiResponse.success("User updated successfully", 
+        return ResponseEntity.ok(ApiResponse.success("User updated successfully",
                 mapToUserResponse(user)));
     }
 
@@ -118,7 +127,7 @@ public class AdminUserController {
     public ResponseEntity<ApiResponse<UserResponse>> changeUserRole(
             @PathVariable Long userId,
             @RequestParam UserRole role) {
-        
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -126,7 +135,7 @@ public class AdminUserController {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        return ResponseEntity.ok(ApiResponse.success("User role changed successfully", 
+        return ResponseEntity.ok(ApiResponse.success("User role changed successfully",
                 mapToUserResponse(user)));
     }
 
@@ -142,7 +151,7 @@ public class AdminUserController {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        return ResponseEntity.ok(ApiResponse.success("User deactivated successfully", 
+        return ResponseEntity.ok(ApiResponse.success("User deactivated successfully",
                 mapToUserResponse(user)));
     }
 
@@ -158,7 +167,7 @@ public class AdminUserController {
         user.setUpdatedAt(LocalDateTime.now());
         userRepository.save(user);
 
-        return ResponseEntity.ok(ApiResponse.success("User activated successfully", 
+        return ResponseEntity.ok(ApiResponse.success("User activated successfully",
                 mapToUserResponse(user)));
     }
 
@@ -169,7 +178,7 @@ public class AdminUserController {
     public ResponseEntity<ApiResponse<String>> resetPassword(
             @PathVariable Long userId,
             @RequestParam String newPassword) {
-        
+
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
@@ -232,10 +241,9 @@ public class AdminUserController {
                 .createdAt(user.getCreatedAt())
                 .updatedAt(user.getUpdatedAt())
                 .totalZones(user.getZones() != null ? user.getZones().size() : 0)
-                .totalDevices(user.getZones() != null ? 
-                        user.getZones().stream()
-                                .mapToInt(zone -> zone.getDevices().size())
-                                .sum() : 0)
+                .totalDevices(user.getZones() != null ? user.getZones().stream()
+                        .mapToInt(zone -> zone.getDevice() != null ? 1 : 0)
+                        .sum() : 0)
                 .build();
     }
 }

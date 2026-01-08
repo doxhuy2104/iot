@@ -106,4 +106,12 @@ public class Zone {
     @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL)
     @Builder.Default
     private Set<Alert> alerts = new HashSet<>();
+
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @OneToMany(mappedBy = "zone", cascade = CascadeType.ALL, orphanRemoval = true) // Changed to orphanRemoval = true to
+                                                                                   // delete actions when zone is
+                                                                                   // deleted
+    @Builder.Default
+    private Set<UserAction> userActions = new HashSet<>();
 }
